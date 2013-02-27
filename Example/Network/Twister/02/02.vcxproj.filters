@@ -1,0 +1,135 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{3b1193e7-4c6c-43ac-9afb-874795c29cee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\iocp">
+      <UniqueIdentifier>{e28ed45c-fd27-4b80-8090-5ab84f9cc6b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\network">
+      <UniqueIdentifier>{6ee4ffe2-693e-45ea-9f29-eeabebb4c8da}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="02.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\include\IOCP\AsyncResult.cpp">
+      <Filter>include\iocp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\include\IOCP\Dispatcher.cpp">
+      <Filter>include\iocp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\include\IOCP\WinException.cpp">
+      <Filter>include\iocp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\include\Network\IPAddress.cpp">
+      <Filter>include\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\include\Network\Socket.cpp">
+      <Filter>include\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\include\Network\SocketProvider.cpp">
+      <Filter>include\network</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\Basic.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\IOCP\AsyncResult.hpp">
+      <Filter>include\iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\IOCP\Buffer.hpp">
+      <Filter>include\iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\IOCP\Dispatcher.hpp">
+      <Filter>include\iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\IOCP\IOCP.hpp">
+      <Filter>include\iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\IOCP\MemoryMgr.hpp">
+      <Filter>include\iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\IOCP\ObjectFactory.hpp">
+      <Filter>include\iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\IOCP\Pointer.hpp">
+      <Filter>include\iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\IOCP\Read.hpp">
+      <Filter>include\iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\IOCP\ReadWriteBuffer.hpp">
+      <Filter>include\iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\IOCP\WinException.hpp">
+      <Filter>include\iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\IOCP\Write.hpp">
+      <Filter>include\iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\Network\Accept.hpp">
+      <Filter>include\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\Network\BasicAcceptor.hpp">
+      <Filter>include\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\Network\BasicDatagramSocket.hpp">
+      <Filter>include\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\Network\BasicStreamSocket.hpp">
+      <Filter>include\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\Network\BufferHelper.hpp">
+      <Filter>include\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\Network\IPAddress.hpp">
+      <Filter>include\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\Network\Socket.hpp">
+      <Filter>include\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\Network\SocketOption.hpp">
+      <Filter>include\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\Network\SocketProvider.hpp">
+      <Filter>include\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\Network\SockInit.hpp">
+      <Filter>include\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\Network\TCP.hpp">
+      <Filter>include\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\include\Network\UDP.hpp">
+      <Filter>include\network</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+</Project>

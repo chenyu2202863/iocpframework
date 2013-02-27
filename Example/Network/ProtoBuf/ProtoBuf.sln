@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ProtoBuf", "ProtoBuf\ProtoBuf.vcproj", "{74812D35-BE45-4862-9144-30A5E91287E3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ProtoBufClient", "ProtoBufClient\ProtoBufClient.vcproj", "{2FE3B48C-E138-4527-84A1-F37B4BED15AC}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RPC", "RPC\RPC.vcproj", "{CBC10907-6EEA-4C37-81C2-4814E7A142AE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{74812D35-BE45-4862-9144-30A5E91287E3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{74812D35-BE45-4862-9144-30A5E91287E3}.Debug|Win32.Build.0 = Debug|Win32
+		{74812D35-BE45-4862-9144-30A5E91287E3}.Release|Win32.ActiveCfg = Release|Win32
+		{74812D35-BE45-4862-9144-30A5E91287E3}.Release|Win32.Build.0 = Release|Win32
+		{2FE3B48C-E138-4527-84A1-F37B4BED15AC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2FE3B48C-E138-4527-84A1-F37B4BED15AC}.Debug|Win32.Build.0 = Debug|Win32
+		{2FE3B48C-E138-4527-84A1-F37B4BED15AC}.Release|Win32.ActiveCfg = Release|Win32
+		{2FE3B48C-E138-4527-84A1-F37B4BED15AC}.Release|Win32.Build.0 = Release|Win32
+		{CBC10907-6EEA-4C37-81C2-4814E7A142AE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CBC10907-6EEA-4C37-81C2-4814E7A142AE}.Debug|Win32.Build.0 = Debug|Win32
+		{CBC10907-6EEA-4C37-81C2-4814E7A142AE}.Release|Win32.ActiveCfg = Release|Win32
+		{CBC10907-6EEA-4C37-81C2-4814E7A142AE}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

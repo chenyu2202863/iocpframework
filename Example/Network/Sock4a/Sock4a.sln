@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Sock4a", "Sock4a\Sock4a.vcxproj", "{D091DCAF-D242-4962-A3E4-23B5C1099222}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sock4_client", "sock4_client\sock4_client.vcxproj", "{7CED3220-32E1-4D1E-B059-4B2784A668E7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D091DCAF-D242-4962-A3E4-23B5C1099222}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D091DCAF-D242-4962-A3E4-23B5C1099222}.Debug|Win32.Build.0 = Debug|Win32
+		{D091DCAF-D242-4962-A3E4-23B5C1099222}.Release|Win32.ActiveCfg = Release|Win32
+		{D091DCAF-D242-4962-A3E4-23B5C1099222}.Release|Win32.Build.0 = Release|Win32
+		{7CED3220-32E1-4D1E-B059-4B2784A668E7}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7CED3220-32E1-4D1E-B059-4B2784A668E7}.Debug|Win32.Build.0 = Debug|Win32
+		{7CED3220-32E1-4D1E-B059-4B2784A668E7}.Release|Win32.ActiveCfg = Release|Win32
+		{7CED3220-32E1-4D1E-B059-4B2784A668E7}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

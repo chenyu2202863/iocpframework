@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Pipe", "Pipe\Pipe.vcproj", "{3FDA7708-C7A6-4353-B88D-14835A734E51}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3FDA7708-C7A6-4353-B88D-14835A734E51}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3FDA7708-C7A6-4353-B88D-14835A734E51}.Debug|Win32.Build.0 = Debug|Win32
+		{3FDA7708-C7A6-4353-B88D-14835A734E51}.Release|Win32.ActiveCfg = Release|Win32
+		{3FDA7708-C7A6-4353-B88D-14835A734E51}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

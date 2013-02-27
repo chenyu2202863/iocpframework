@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DiscardSvr", "Discard\Discard.vcxproj", "{F8FA3F66-812F-40AB-93A7-4BB3B3E35B74}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DiscardCli", "DiscardCli\DiscardCli.vcxproj", "{90001008-1643-4814-B306-F11C3099F6C2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F8FA3F66-812F-40AB-93A7-4BB3B3E35B74}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F8FA3F66-812F-40AB-93A7-4BB3B3E35B74}.Debug|Win32.Build.0 = Debug|Win32
+		{F8FA3F66-812F-40AB-93A7-4BB3B3E35B74}.Release|Win32.ActiveCfg = Release|Win32
+		{F8FA3F66-812F-40AB-93A7-4BB3B3E35B74}.Release|Win32.Build.0 = Release|Win32
+		{90001008-1643-4814-B306-F11C3099F6C2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{90001008-1643-4814-B306-F11C3099F6C2}.Debug|Win32.Build.0 = Debug|Win32
+		{90001008-1643-4814-B306-F11C3099F6C2}.Release|Win32.ActiveCfg = Release|Win32
+		{90001008-1643-4814-B306-F11C3099F6C2}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

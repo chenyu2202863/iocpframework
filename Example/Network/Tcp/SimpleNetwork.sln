@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetworkSvr", "NetworkSvr\TestNetwork.vcproj", "{12D1D0D6-25EC-4549-92CF-408C1B894944}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetworkCli", "NetworkCli\NetworkCli.vcproj", "{8E003496-5B14-4B40-9BC8-4922654497C1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{12D1D0D6-25EC-4549-92CF-408C1B894944}.Debug|Win32.ActiveCfg = Debug|Win32
+		{12D1D0D6-25EC-4549-92CF-408C1B894944}.Debug|Win32.Build.0 = Debug|Win32
+		{12D1D0D6-25EC-4549-92CF-408C1B894944}.Release|Win32.ActiveCfg = Release|Win32
+		{12D1D0D6-25EC-4549-92CF-408C1B894944}.Release|Win32.Build.0 = Release|Win32
+		{8E003496-5B14-4B40-9BC8-4922654497C1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8E003496-5B14-4B40-9BC8-4922654497C1}.Debug|Win32.Build.0 = Debug|Win32
+		{8E003496-5B14-4B40-9BC8-4922654497C1}.Release|Win32.ActiveCfg = Release|Win32
+		{8E003496-5B14-4B40-9BC8-4922654497C1}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

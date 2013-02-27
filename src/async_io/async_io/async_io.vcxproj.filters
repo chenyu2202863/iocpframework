@@ -1,0 +1,195 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="iocp">
+      <UniqueIdentifier>{4e9241ce-2ea1-4515-8d8d-d1e6a968ee53}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="file">
+      <UniqueIdentifier>{903a8554-6371-4215-8945-9b3becc915c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="logger">
+      <UniqueIdentifier>{7347992a-2c98-4743-ae98-3122967878ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="network">
+      <UniqueIdentifier>{23344633-98a0-4052-b349-ed9d1760d58e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="timer">
+      <UniqueIdentifier>{cde6fc6a-8bf6-4be0-8ad8-deb734d1cc39}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="file\detail">
+      <UniqueIdentifier>{1b97f516-2c60-43dd-b331-e6ccd8c746c7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="iocp\internal">
+      <UniqueIdentifier>{eb82bc5d-772f-4ae8-b52a-b12136238286}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="logger\detail">
+      <UniqueIdentifier>{5f37a03b-8086-48bd-bb95-95f6e43c31b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="timer\impl">
+      <UniqueIdentifier>{820f8350-8888-4068-8a11-ad54c5bca1a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="win32">
+      <UniqueIdentifier>{55886956-d12d-4d2f-b4fa-30e100c3c90e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="win32\debug">
+      <UniqueIdentifier>{1f5f3411-b3e8-4d18-830d-21f772d5aad3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\include\async_io\file\basic_file.hpp">
+      <Filter>file</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\file\file.hpp">
+      <Filter>file</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\file\file_monitor.hpp">
+      <Filter>file</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\file\detail\file_change_callback.hpp">
+      <Filter>file\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\file\detail\file_change_notify_hook.hpp">
+      <Filter>file\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\iocp\async_result.hpp">
+      <Filter>iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\iocp\buffer.hpp">
+      <Filter>iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\iocp\dispatcher.hpp">
+      <Filter>iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\iocp\iocp.hpp">
+      <Filter>iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\iocp\object_factory.hpp">
+      <Filter>iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\iocp\pointer.hpp">
+      <Filter>iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\iocp\read.hpp">
+      <Filter>iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\iocp\read_write_buffer.hpp">
+      <Filter>iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\iocp\win_exception.hpp">
+      <Filter>iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\iocp\write.hpp">
+      <Filter>iocp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\iocp\internal\condition.hpp">
+      <Filter>iocp\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\logger\logger.hpp">
+      <Filter>logger</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\logger\detail\basic_logger.hpp">
+      <Filter>logger\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\logger\detail\logger_impl.hpp">
+      <Filter>logger\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\logger\detail\logger_service.hpp">
+      <Filter>logger\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\accept.hpp">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\basic_acceptor.hpp">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\basic_datagram_socket.hpp">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\basic_stream_socket.hpp">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\connect.hpp">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\ip_address.hpp">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\sock_init.hpp">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\socket.hpp">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\socket_option.hpp">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\socket_provider.hpp">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\tcp.hpp">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\udp.hpp">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\timer\timer.hpp">
+      <Filter>timer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\timer\impl\basic_timer.hpp">
+      <Filter>timer\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\timer\impl\timer_impl.hpp">
+      <Filter>timer\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\timer\impl\timer_service.hpp">
+      <Filter>timer\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\win32\debug\stack_walker.hpp">
+      <Filter>win32\debug</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\include\async_io\file\file.cpp">
+      <Filter>file</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\async_io\file\file_monitor.cpp">
+      <Filter>file</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\async_io\iocp\async_result.cpp">
+      <Filter>iocp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\async_io\iocp\dispatcher.cpp">
+      <Filter>iocp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\async_io\iocp\win_exception.cpp">
+      <Filter>iocp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\async_io\network\ip_address.cpp">
+      <Filter>network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\async_io\network\socket.cpp">
+      <Filter>network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\async_io\network\socket_provider.cpp">
+      <Filter>network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\win32\debug\stack_walker.cpp">
+      <Filter>win32\debug</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
