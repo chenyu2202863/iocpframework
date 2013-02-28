@@ -3,12 +3,12 @@
 
 #include "stdafx.h"
 
-#include "../../../../include/Network/TCP.hpp"
+#include <network/tcp.hpp>
 
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	async::iocp::IODispatcher io(1);
+	async::iocp::io_dispatcher io(1);
 	
 
 	system("pause");

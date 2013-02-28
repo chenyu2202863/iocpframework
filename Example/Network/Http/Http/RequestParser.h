@@ -58,16 +58,16 @@ namespace http
 
 		// ·µ»ØÖµ TRUE_VALUE, FALSE_VALUE, INDETERMINATE
 		template<typename InputIteratorT>
-		std::tr1::tuple<ParseRet, ParseRet> Parse(Request& req, InputIteratorT begin, InputIteratorT end)
+		std::tuple<ParseRet, ParseRet> Parse(Request& req, InputIteratorT begin, InputIteratorT end)
 		{
 			while(begin != end)
 			{
 				ParseRet result = Consume(req, *begin++);
 				if( result != INDETERMINATE )
-					return std::tr1::make_tuple(result, result);
+					return std::make_tuple(result, result);
 			}
 			
-			return std::tr1::make_tuple(INDETERMINATE, INDETERMINATE);
+			return std::make_tuple(INDETERMINATE, INDETERMINATE);
 		}
 
 	private:

@@ -1,9 +1,9 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetworkSvr", "NetworkSvr\TestNetwork.vcproj", "{12D1D0D6-25EC-4549-92CF-408C1B894944}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetworkSvr", "NetworkSvr\TestNetwork.vcxproj", "{12D1D0D6-25EC-4549-92CF-408C1B894944}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetworkCli", "NetworkCli\NetworkCli.vcproj", "{8E003496-5B14-4B40-9BC8-4922654497C1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetworkCli", "NetworkCli\NetworkCli.vcxproj", "{8E003496-5B14-4B40-9BC8-4922654497C1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

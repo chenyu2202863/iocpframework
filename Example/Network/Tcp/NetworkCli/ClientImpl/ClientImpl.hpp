@@ -1,40 +1,33 @@
 #ifndef __CLIENT_IMPL_HPP
 #define __CLIENT_IMPL_HPP
 
+#include <iostream>
+#include <network/tcp.hpp>
 
-#include "../../../../include/Network/TCP.hpp"
-#include "../CRC32.hpp"
 
-using namespace async::network;
-
+using namespace async;
 
 
 class Client
 {
 private:
-	IODispatcher &io_;
-	Tcp::Socket socket_;
+	iocp::io_dispatcher &io_;
+	network::tcp::socket socket_;
 	std::vector<char> buf_;
 
 public:
-	Client(IODispatcher &io, const std::string &ip, u_short port)
+	Client(iocp::io_dispatcher &io, const std::string &ip, u_short port)
 		: io_(io)
-		, socket_(io, Tcp::V4())
+		, socket_(io, network::tcp::v4())
 	{
 		const size_t len = 1024;
 		buf_.resize(len);
 		std::fill(buf_.begin(), buf_.end(), 100);
 
-		size_t crc = algorithm::crc::cac_crc32(&buf_[sizeof(size_t)], len - sizeof(size_t));
-		const char *beg = reinterpret_cast<char *>(&crc);
-		const char *end = beg + sizeof(size_t);
-		std::copy(beg, end, buf_.begin());
-		
-
 		try
 		{
-			socket_.AsyncConnect(IPAddress::Parse(ip), port, 
-				std::tr1::bind(&Client::_OnConnect, this, _Size, _Error));
+			socket_.async_connect(network::ip_address::parse(ip), port, 
+				std::bind(&Client::_OnConnect, this, iocp::_Error));
 		}
 		catch(std::exception &e)
 		{
@@ -44,17 +37,16 @@ public:
 
 
 private:
-	void _OnConnect(u_long bytes, u_long error)
+	void _OnConnect(iocp::error_code error)
 	{
 		if( error != 0 )
 			return;
 
-		//static char msg[] = "I am a new client";
-
+	
 		try
 		{
-			AsyncWrite(socket_, Buffer(buf_), TransferAll(), 
-				std::tr1::bind(&Client::_HandleWrite, this, _Size, _Error));
+			iocp::async_write(socket_, iocp::buffer(buf_), iocp::transfer_all(), 
+				std::bind(&Client::_HandleWrite, this, iocp::_Error, iocp::_Size));
 		}
 		catch(std::exception &e)
 		{
@@ -62,53 +54,56 @@ private:
 		}
 	}
 
-	void _HandleRead(u_long bytes, u_long error)
+	void _HandleRead(iocp::error_code error, u_long bytes)
 	{
 		try
 		{
-			if( bytes == 0 )
+			if( bytes == 0 || error != 0 )
 			{
-				socket_.AsyncDisconnect(std::tr1::bind(&Client::_DisConnect, this));
+				socket_.async_disconnect(std::bind(&Client::_DisConnect, this));
 				return;
 			}
 
-			//std::cout.write(buf_.data(), bytes) << std::endl;
 
-			::Sleep(2000);
+			::Sleep(1000);
 
-			AsyncWrite(socket_, Buffer(buf_), TransferAll(), 
-				std::tr1::bind(&Client::_HandleWrite, this, _Size, _Error));
+			iocp::async_write(socket_, iocp::buffer(buf_), iocp::transfer_all(), 
+				std::bind(&Client::_HandleWrite, this, iocp::_Error, iocp::_Size));
 		}
 		catch(const std::exception &e)
 		{
 			std::cerr << e.what() << std::endl;
+
+			socket_.async_disconnect(std::bind(&Client::_DisConnect, this));
 		}
 
 	}
 
-	void _HandleWrite(u_long bytes, u_long error)
+	void _HandleWrite(iocp::error_code error, u_long bytes)
 	{
 		try
 		{		
-			if( bytes == 0 )
+			if( bytes == 0 || error != 0 )
 			{
-				socket_.AsyncDisconnect(std::tr1::bind(&Client::_DisConnect, this));
+				socket_.async_disconnect(std::bind(&Client::_DisConnect, this));
 				return;
 			}
 
-			AsyncRead(socket_, Buffer(buf_), TransferAll(),
-				std::tr1::bind(&Client::_HandleRead, this, _Size, _Error));
+			iocp::async_read(socket_, iocp::buffer(buf_), iocp::transfer_all(),
+				std::bind(&Client::_HandleRead, this, iocp::_Error, iocp::_Size));
 
 		}
 		catch(std::exception &e)
 		{
 			std::cerr << e.what() << std::endl;
+
+			socket_.async_disconnect(std::bind(&Client::_DisConnect, this));
 		}
 	}
 
 	void _DisConnect()
 	{
-		socket_.Close();
+		socket_.close();
 	}
 };
 

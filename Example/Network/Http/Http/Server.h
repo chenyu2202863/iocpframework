@@ -2,7 +2,7 @@
 #define __HTTP_SERVER_HPP
 
 #include <string>
-#include "../../../../include/Network/TCP.hpp"
+#include <async_io\network\tcp.hpp>
 
 
 #include "ConnectionMgr.h"
@@ -16,8 +16,8 @@ namespace http
 	class Server
 	{
 	private:
-		async::iocp::IODispatcher io_;
-		async::network::Tcp::Accpetor acceptor_;
+		async::iocp::io_dispatcher io_;
+		async::network::tcp::accpetor acceptor_;
 	
 		ConnectionMgr connectionMgr_;
 		RequestHandler requestHandler_;
@@ -34,7 +34,7 @@ namespace http
 		void Stop();
 
 	private:
-		void _HandleAccept(u_long, const async::network::SocketPtr &);
+		void _HandleAccept(async::iocp::error_code, const async::network::socket_handle_ptr &);
 		void _HandleStop();
 	};
 }

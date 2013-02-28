@@ -6,9 +6,9 @@
 
 #include <string>
 #include <vector>
+#include <async_io\iocp\read_write_buffer.hpp>
 
 #include "Header.h"
-#include "../../../../include/Network/TCP.hpp"
 
 
 namespace http
@@ -45,7 +45,7 @@ namespace http
 		std::string content;
 
 		//
-		std::vector<async::iocp::ConstBuffer> ToBuffers();
+		std::vector<async::iocp::const_buffer> ToBuffers();
 
 		// ·µ»ØÒ»¸öReply
 		static Reply StockReply(StatusType status);

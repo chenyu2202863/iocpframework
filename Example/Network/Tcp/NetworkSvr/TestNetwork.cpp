@@ -2,8 +2,13 @@
 //
 
 #include "stdafx.h"
+
+#include <iostream>
 #include "impl/ServerImpl.h"
-#include "../../../../include/Timer/Timer.hpp"
+
+#include <timer/timer.hpp>
+
+
 
 #ifdef _DEBUG
 #define new   new(_NORMAL_BLOCK, __FILE__, __LINE__)
@@ -19,15 +24,15 @@ int main(int argc, char* argv[])
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
-	IODispatcher ioService(GetFitThreadNum());
+	iocp::io_dispatcher io;
 
 	try
 	{
-		Server server(ioService, 5050);
+		Server server(io, 5050);
 		server.Start();
 
-		//async::timer::Timer time(ioService, 2000, 0);
-		//time.BeginWait(std::tr1::bind(&AsyncPrint));
+		timer::timer_handle time(io, 2000, 0, std::bind(&AsyncPrint));
+		time.async_wait();
 
 		system("pause");
 		server.Stop();

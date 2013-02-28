@@ -28,18 +28,6 @@ BOOL WINAPI console_ctrl_handler(DWORD ctrl_type)
 	}
 }
 
-// Debug Memory Info
-void DebugAllocSize(LONG allocCount, size_t size)
-{
-	std::cout << "Alloc " << allocCount << ": " << size << std::endl;
-}
-
-void DebugDeallocSize(LONG deallocCount, size_t size)
-{
-	std::cout << "Dealloc " << deallocCount << ": " << size << std::endl;
-}
-
-
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -50,7 +38,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		http::Server server("127.0.0.1", "5050",
 			"F:\\Program\\Adobe\\documentation\\html\\");
 
-		console_ctrl_function = std::tr1::bind(&http::Server::Stop, &server);
+		console_ctrl_function = std::bind(&http::Server::Stop, &server);
 		::SetConsoleCtrlHandler(&console_ctrl_handler, TRUE);
 
 		server.Start();

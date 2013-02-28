@@ -4,51 +4,52 @@
 #include "stdafx.h"
 
 
-#include "../../../../include/Network/TCP.hpp"
+#include <network/tcp.hpp>
 
 using namespace async;
 
 class Server
 {
-	iocp::IODispatcher &io_;
-	network::Tcp::Accpetor acceptor_;
+	iocp::io_dispatcher &io_;
+	network::tcp::accpetor acceptor_;
 
 public:
-	explicit Server(iocp::IODispatcher &io, u_short port)
+	explicit Server(iocp::io_dispatcher &io, u_short port)
 		: io_(io)
-		, acceptor_(io, network::Tcp::V4(), port)
+		, acceptor_(io, network::tcp::v4(), port)
 	{}
 
 
 	void Start()
 	{
-		using namespace std::tr1::placeholders;
+		network::socket_handle_ptr sock(network::make_socket(io_, 
+			network::tcp::v4().family(), network::tcp::v4().type(), network::tcp::v4().protocol()));
 
-		acceptor_.AsyncAccept(0, std::tr1::bind(
-			&Server::_OnAccept, this, _1, _2));
+		acceptor_.async_accept(sock, std::bind(
+			&Server::_OnAccept, this, iocp::_Error, iocp::_Socket));
 	}
 
-	void _OnAccept(u_long err, const network::SocketPtr &newSock)
+	void _OnAccept(iocp::error_code err, const network::socket_handle_ptr &newSock)
 	{
 		if( err != 0 )
 			return;
 
 		char msg[] = "No User";
-		network::ConstBuffer buf(msg, _countof(msg));
-		newSock->AsyncWrite(buf, std::tr1::bind(
-			&Server::_OnWrite, this, iocp::_Error));
+		newSock->async_write(iocp::buffer(msg), std::bind(
+			&Server::_OnWrite, this, iocp::_Error, newSock));
 	}
 
-	void _OnWrite(u_long err)
+	void _OnWrite(iocp::error_code err, const network::socket_handle_ptr &sock)
 	{
 		assert(err == 0);
+		sock->shutdown(SD_BOTH);
 	}
 };
 
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	iocp::IODispatcher io(1);
+	iocp::io_dispatcher io(1);
 	Server svr(io, 1079);
 
 

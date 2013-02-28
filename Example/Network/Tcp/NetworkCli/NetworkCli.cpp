@@ -13,7 +13,7 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
-	IODispatcher ioService(GetFitThreadNum());
+	iocp::io_dispatcher ioService(1);
 	
 
 	try
@@ -31,7 +31,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		clis.resize(cnt);
 		for(size_t i = 0; i != cnt; ++i)
+		{
 			clis.push_back(new Client(ioService, ip.c_str(), 5050));
+			::Sleep(50);
+		}
 
 
 		system("pause");

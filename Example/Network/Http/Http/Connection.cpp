@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "connection.h"
 
-
+#include <iostream>
 #include <vector>
 #include "ConnectionMgr.h"
 #include "RequestHandler.h"
@@ -11,7 +11,7 @@
 namespace http
 {
 	
-	Connection::Connection(const async::network::SocketPtr &sock, ConnectionMgr &mgr, RequestHandler &handler)
+	Connection::Connection(const async::network::socket_handle_ptr &sock, ConnectionMgr &mgr, RequestHandler &handler)
 		: socket_(sock)
 		, connectionMgr_(mgr)
 		, requestHandler_(handler)
@@ -19,26 +19,24 @@ namespace http
 	{}
 
 
-	async::network::Tcp::Socket &Connection::Socket()
+	async::network::tcp::socket &Connection::Socket()
 	{
 		return socket_;
 	}
 
 	void Connection::Start()
 	{
-		using namespace std::tr1::placeholders;
-
-		socket_.AsyncRead(async::iocp::Buffer(buffer_), 
-			std::tr1::bind(&Connection::_HandleRead, shared_from_this(), _1, _2));
+		socket_.async_read(async::iocp::buffer(buffer_), 
+			std::bind(&Connection::_HandleRead, shared_from_this(), async::iocp::_Error, async::iocp::_Size));
 	}
 
 	void Connection::Stop()
 	{
-		socket_.Close();
+		socket_.close();
 	}
 	
 
-	void Connection::_CopyBuffer(const std::vector<async::iocp::ConstBuffer> &buf)
+	void Connection::_CopyBuffer(const std::vector<async::iocp::const_buffer> &buf)
 	{
 		size_t total = 0;
 		for(size_t i = 0; i != buf.size(); ++i)
@@ -56,7 +54,7 @@ namespace http
 		}
 	}
 
-	void Connection::_HandleRead(u_long error, u_long bytes)
+	void Connection::_HandleRead(async::iocp::error_code error, u_long bytes)
 	{
 		if( error == ERROR_OPERATION_ABORTED || bytes == 0 )
 		{
@@ -67,31 +65,29 @@ namespace http
 		{
 			try
 			{
-				using namespace std::tr1::placeholders;
-
 				ParseRet result, ignore;
-				std::tr1::tie(result, ignore) = requestParser_.Parse(request_, buffer_.data(), buffer_.data() + bytes);
+				std::tie(result, ignore) = requestParser_.Parse(request_, buffer_.data(), buffer_.data() + bytes);
 
 				if( result == TRUE_VALUE )
 				{
 					requestHandler_.HandleRequest(request_, reply_);
 
 					_CopyBuffer(reply_.ToBuffers());
-					AsyncWrite(socket_, async::iocp::Buffer(socketBuffer_.data(), socketBuffer_.size()),
-						std::tr1::bind(&Connection::_HandleWrite, shared_from_this(), _1, _2));
+					async::iocp::async_write(socket_, async::iocp::buffer(socketBuffer_.data(), socketBuffer_.size()),
+						std::bind(&Connection::_HandleWrite, shared_from_this(), async::iocp::_Error, async::iocp::_Size));
 				}	
 				else if( result == FALSE_VALUE )
 				{
 					reply_ = Reply::StockReply(Reply::bad_request);
 
 					_CopyBuffer(reply_.ToBuffers());
-					AsyncWrite(socket_, async::iocp::Buffer(socketBuffer_.data(), socketBuffer_.size()),
-						std::tr1::bind(&Connection::_HandleWrite, shared_from_this(), _1, _2));
+					async::iocp::async_write(socket_, async::iocp::buffer(socketBuffer_.data(), socketBuffer_.size()),
+						std::bind(&Connection::_HandleWrite, shared_from_this(), async::iocp::_Error, async::iocp::_Size));
 				}
 				else	// ParseRet::INDETERMINATE
 				{
-					socket_.AsyncRead(async::iocp::Buffer(buffer_), 
-						std::tr1::bind(&Connection::_HandleRead, shared_from_this(), _1, _2));
+					socket_.async_read(async::iocp::buffer(buffer_), 
+						std::bind(&Connection::_HandleRead, shared_from_this(), async::iocp::_Error, async::iocp::_Size));
 				}
 			}
 			catch(std::exception &e)
@@ -104,12 +100,12 @@ namespace http
 	}
 
 
-	void Connection::_HandleWrite(u_long error, u_long bytes)
+	void Connection::_HandleWrite(async::iocp::error_code error, u_long bytes)
 	{
 		// нч╢М
 		if( error == 0 )
 		{
-			socket_.Shutdown(SD_BOTH);
+			socket_.shutdown(SD_BOTH);
 			//socket_.AsyncDisconnect(NULL);
 		}
 		

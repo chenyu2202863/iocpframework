@@ -95,23 +95,23 @@ namespace http
 
 
 
-	std::vector<async::iocp::ConstBuffer> Reply::ToBuffers()
+	std::vector<async::iocp::const_buffer> Reply::ToBuffers()
 	{
-		std::vector<async::iocp::ConstBuffer> buffers;
-		buffers.push_back(async::iocp::Buffer(status_strings::ToBuffer(status)));
+		std::vector<async::iocp::const_buffer> buffers;
+		buffers.push_back(async::iocp::buffer(status_strings::ToBuffer(status)));
 
 		for(std::size_t i = 0; i != headers.size(); ++i)
 		{
 			Header& h = headers[i];
 
-			buffers.push_back(async::iocp::Buffer(h.name));
-			buffers.push_back(async::iocp::Buffer(misc_strings::nameValueSeparator));
-			buffers.push_back(async::iocp::Buffer(h.value));
-			buffers.push_back(async::iocp::Buffer(misc_strings::crlf));
+			buffers.push_back(async::iocp::buffer(h.name));
+			buffers.push_back(async::iocp::buffer(misc_strings::nameValueSeparator));
+			buffers.push_back(async::iocp::buffer(h.value));
+			buffers.push_back(async::iocp::buffer(misc_strings::crlf));
 		}
 
-		buffers.push_back(async::iocp::Buffer(misc_strings::crlf));
-		buffers.push_back(async::iocp::Buffer(content));
+		buffers.push_back(async::iocp::buffer(misc_strings::crlf));
+		buffers.push_back(async::iocp::buffer(content));
 
 		return buffers;
 	}

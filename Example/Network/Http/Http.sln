@@ -1,9 +1,7 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Http", "Http\Http.vcproj", "{72B5CC7D-6706-48B2-A5F7-13F6795B73DD}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Http2", "Http2\Http2.vcproj", "{F5649B75-FFC9-4A94-8537-C4063E9999F7}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Http", "Http\Http.vcxproj", "{72B5CC7D-6706-48B2-A5F7-13F6795B73DD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,10 +13,6 @@ Global
 		{72B5CC7D-6706-48B2-A5F7-13F6795B73DD}.Debug|Win32.Build.0 = Debug|Win32
 		{72B5CC7D-6706-48B2-A5F7-13F6795B73DD}.Release|Win32.ActiveCfg = Release|Win32
 		{72B5CC7D-6706-48B2-A5F7-13F6795B73DD}.Release|Win32.Build.0 = Release|Win32
-		{F5649B75-FFC9-4A94-8537-C4063E9999F7}.Debug|Win32.ActiveCfg = Debug|Win32
-		{F5649B75-FFC9-4A94-8537-C4063E9999F7}.Debug|Win32.Build.0 = Debug|Win32
-		{F5649B75-FFC9-4A94-8537-C4063E9999F7}.Release|Win32.ActiveCfg = Release|Win32
-		{F5649B75-FFC9-4A94-8537-C4063E9999F7}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

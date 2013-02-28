@@ -28,7 +28,7 @@ namespace http
 	void ConnectionMgr::StopAll()
 	{
 		std::for_each(connections_.begin(), connections_.end(),
-			std::tr1::bind(&Connection::Stop, std::tr1::placeholders::_1));
+			std::tr1::bind(&Connection::Stop, std::placeholders::_1));
 
 		{
 			AutoLock lock(lock_);

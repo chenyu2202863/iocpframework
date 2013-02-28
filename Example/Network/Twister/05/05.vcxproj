@@ -56,16 +56,19 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <AdditionalIncludeDirectories>../../../../include/async_io/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>async_io_d.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../../../lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -93,39 +96,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\include\IOCP\AsyncResult.cpp" />
-    <ClCompile Include="..\..\..\..\include\IOCP\Dispatcher.cpp" />
-    <ClCompile Include="..\..\..\..\include\IOCP\WinException.cpp" />
-    <ClCompile Include="..\..\..\..\include\Network\IPAddress.cpp" />
-    <ClCompile Include="..\..\..\..\include\Network\Socket.cpp" />
-    <ClCompile Include="..\..\..\..\include\Network\SocketProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="..\..\..\..\include\Basic.hpp" />
-    <ClInclude Include="..\..\..\..\include\IOCP\AsyncResult.hpp" />
-    <ClInclude Include="..\..\..\..\include\IOCP\Buffer.hpp" />
-    <ClInclude Include="..\..\..\..\include\IOCP\Dispatcher.hpp" />
-    <ClInclude Include="..\..\..\..\include\IOCP\IOCP.hpp" />
-    <ClInclude Include="..\..\..\..\include\IOCP\MemoryMgr.hpp" />
-    <ClInclude Include="..\..\..\..\include\IOCP\ObjectFactory.hpp" />
-    <ClInclude Include="..\..\..\..\include\IOCP\Pointer.hpp" />
-    <ClInclude Include="..\..\..\..\include\IOCP\Read.hpp" />
-    <ClInclude Include="..\..\..\..\include\IOCP\ReadWriteBuffer.hpp" />
-    <ClInclude Include="..\..\..\..\include\IOCP\WinException.hpp" />
-    <ClInclude Include="..\..\..\..\include\IOCP\Write.hpp" />
-    <ClInclude Include="..\..\..\..\include\Network\Accept.hpp" />
-    <ClInclude Include="..\..\..\..\include\Network\BasicAcceptor.hpp" />
-    <ClInclude Include="..\..\..\..\include\Network\BasicDatagramSocket.hpp" />
-    <ClInclude Include="..\..\..\..\include\Network\BasicStreamSocket.hpp" />
-    <ClInclude Include="..\..\..\..\include\Network\IPAddress.hpp" />
-    <ClInclude Include="..\..\..\..\include\Network\Socket.hpp" />
-    <ClInclude Include="..\..\..\..\include\Network\SocketOption.hpp" />
-    <ClInclude Include="..\..\..\..\include\Network\SocketProvider.hpp" />
-    <ClInclude Include="..\..\..\..\include\Network\SockInit.hpp" />
-    <ClInclude Include="..\..\..\..\include\Network\TCP.hpp" />
-    <ClInclude Include="..\..\..\..\include\Network\UDP.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />

@@ -1,47 +1,42 @@
 #ifndef __SERVICE_HPP
 #define __SERVICE_HPP
 
+#include <array>
+
+#include <network/tcp.hpp>
+#include <memory_pool/fixed_memory_pool.hpp>
 
 
-#include "../../../../../include/Network/TCP.hpp"
-#include "../../../../../include/Timer/Timer.hpp"
+using namespace async;
 
-
-#include "../CRC32.hpp"
-
-using namespace async::network;
-using namespace async::timer;
-
-volatile long g_ClientNum = 0;
+volatile long g_ClientNum = 0;	// atomic
 
 
 class Session
-	: public std::tr1::enable_shared_from_this<Session>
+	: public std::enable_shared_from_this<Session>
 {
 private:
-	Tcp::Socket socket_;
-	std::vector<char> buf_;
+	network::tcp::socket socket_;
+	std::array<char, 1024> buf_;
 
-	async::iocp::CallbackType readCallback_;
-	async::iocp::CallbackType writeCallback_;
+	iocp::rw_callback_type readCallback_;
+	iocp::rw_callback_type writeCallback_;
 
 public:
-	explicit Session(const SocketPtr &sock)
+	explicit Session(const network::socket_handle_ptr &sock)
 		: socket_(sock)
 	{
-		buf_.resize(1024 * 1024 + sizeof(size_t));
-		socket_.IOControl(NonBlockingIO(true));
+		socket_.set_option(network::no_delay(true));
 		::InterlockedIncrement(&g_ClientNum);
 	}
 	~Session()
 	{
-		//Stop();
 		::InterlockedDecrement(&g_ClientNum);
 	}
 
 
 public:
-	Tcp::Socket& GetSocket()
+	network::tcp::socket& GetSocket()
 	{
 		return socket_;
 	}
@@ -50,58 +45,56 @@ public:
 	{
 		try
 		{		
-			readCallback_	= std::tr1::bind(&Session::_HandleRead, shared_from_this(), _Size, _Error);
-			writeCallback_	= std::tr1::bind(&Session::_HandleWrite, shared_from_this(), _Size, _Error);
+			readCallback_	= std::bind(&Session::_HandleRead, shared_from_this(), iocp::_Error, iocp::_Size);
+			writeCallback_	= std::bind(&Session::_HandleWrite, shared_from_this(), iocp::_Error, iocp::_Size);
 
-			AsyncRead(socket_, Buffer(buf_), TransferAll(), readCallback_);
-
+			iocp::async_read(socket_, iocp::buffer(buf_), iocp::transfer_all(), readCallback_);
 		}
 		catch(std::exception &e)
 		{
 			std::cerr << e.what() << std::endl;
+			Stop();
 		}
 	}
 
 	void Stop()
 	{
-		socket_.Close();
+		socket_.close();
 
 		readCallback_	= 0;
 		writeCallback_	= 0;
 	}
 
 private:
-	void _HandleRead(u_long bytes, u_long error)
+	void _HandleRead(iocp::error_code error, u_long bytes)
 	{
 		try
 		{
 			if( bytes == 0 )
 			{
-				socket_.AsyncDisconnect(std::tr1::bind(&Session::_DisConnect, shared_from_this()));
+				Stop();
 				return;
 			}
 
-			size_t crc = algorithm::crc::cac_crc32(&buf_[sizeof(size_t)], bytes - sizeof(size_t));
-			size_t dst = *(size_t *)(&buf_[0]);
-			assert(crc == dst);
-
-			AsyncWrite(socket_, Buffer(buf_), TransferAll(), writeCallback_);
+			iocp::async_write(socket_, iocp::buffer(buf_), iocp::transfer_all(), writeCallback_);
 		}
 		catch(const std::exception &e)
 		{
 			std::cerr << e.what() << std::endl;
+			Stop();
 		}
 	}
 
-	void _HandleWrite(u_long bytes, u_long error)
+	void _HandleWrite(iocp::error_code error, u_long bytes)
 	{
 		try
 		{		
-			AsyncRead(socket_, Buffer(buf_), TransferAtLeast(1), readCallback_);
+			iocp::async_read(socket_, iocp::buffer(buf_), iocp::transfer_all(), readCallback_);
 		}
 		catch(std::exception &e)
 		{
 			std::cerr << e.what() << std::endl;
+			Stop();
 		}
 	}
 
@@ -111,7 +104,7 @@ private:
 	}
 };
 
-typedef std::tr1::shared_ptr<Session> SessionPtr;
+typedef std::shared_ptr<Session> SessionPtr;
 
 
 
@@ -122,26 +115,19 @@ namespace async
 	namespace iocp
 	{
 		template<>
-		struct ObjectFactory< Session >
+		struct object_factory_t< Session >
 		{
-			typedef async::memory::FixedMemoryPool<true, sizeof(Session)>	PoolType;
-			typedef ObjectPool< PoolType >									ObjectPoolType;
+			typedef memory_pool::fixed_memory_pool_t<true, sizeof(Session)>		PoolType;
+			typedef object_pool_t< PoolType >								ObjectPoolType;
 		};
 	}
 }
 
 
-template<typename T>
-struct NoneDeletor
-{
-	void operator()(T *)
-	{}
-};
 
-
-inline SessionPtr CreateSession(const SocketPtr &socket)
+inline SessionPtr CreateSession(const network::socket_handle_ptr &socket)
 {
-	return SessionPtr(ObjectAllocate<Session>(socket), &ObjectDeallocate<Session>);
+	return SessionPtr(iocp::object_allocate<Session>(socket), &iocp::object_deallocate<Session>);
 	//return SessionPtr(new Session(io, socket));
 }
 
@@ -150,14 +136,13 @@ inline SessionPtr CreateSession(const SocketPtr &socket)
 class Server
 {
 private:
-	IODispatcher &io_;
-	Tcp::Accpetor acceptor_;
-	std::auto_ptr<Timer> timer_;
+	iocp::io_dispatcher &io_;
+	network::tcp::accpetor acceptor_;
 
 public:
-	Server(IODispatcher &io, short port)
+	Server(iocp::io_dispatcher &io, short port)
 		: io_(io)
-		, acceptor_(io_, Tcp::V4(), port, INADDR_ANY)
+		, acceptor_(io_, network::tcp::v4(), port)
 	{}
 
 	~Server()
@@ -168,9 +153,6 @@ public:
 public:
 	void Start()
 	{
-		timer_.reset(new Timer(io_, 2000, 0, std::tr1::bind(&Server::_OnTimer, this)));
-		timer_->AsyncWait();
-
 		_StartAccept();
 	}
 
@@ -184,8 +166,11 @@ private:
 	{		
 		try
 		{
-			acceptor_.AsyncAccept(0, 
-				std::tr1::bind(&Server::_OnAccept, this, std::tr1::placeholders::_1, std::tr1::placeholders::_2/*std::tr1::cref(acceptSock)*/));
+			network::socket_handle_ptr sck(network::make_socket(io_, 
+				network::tcp::v4().family(), network::tcp::v4().type(), network::tcp::v4().protocol()));
+			
+			acceptor_.async_accept(sck, 
+				std::bind(&Server::_OnAccept, this, iocp::_Error, iocp::_Socket));
 		} 
 		catch(const std::exception &e)
 		{
@@ -195,16 +180,12 @@ private:
 
 	void _StopServer()
 	{
-		acceptor_.Close();
+		acceptor_.close();
 	}
 
-	void _OnTimer()
-	{
-		std::cout << "Clients: " << g_ClientNum << std::endl;
-	}
 
 private:
-	void _OnAccept(u_long error, const SocketPtr &acceptSocket)
+	void _OnAccept(iocp::error_code error, const network::socket_handle_ptr &acceptSocket)
 	{
 		if( error != 0 )
 			return;
