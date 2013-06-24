@@ -2,269 +2,333 @@
 #define __TIMER_TIMER_SERVICE_HPP
 
 #include <unordered_map>
+#include <mutex>
+#include <thread>
+#include <map>
 
-#include "../../iocp/dispatcher.hpp"
-#include "../../../multi_thread/thread.hpp"
+#include "../../service/dispatcher.hpp"
 #include "../../../exception/exception_base.hpp"
 
 
 
-namespace async
-{
-	namespace timer
+namespace async {
+
+	class event_t
 	{
-		namespace impl
+	public:
+		HANDLE event_;
+
+		event_t(HANDLE hEvent = 0) 
+			: event_(hEvent)
+		{ 
+			create();
+		}
+
+		~event_t()
 		{
-			
-			// alterable IO
-			inline void WINAPI APCFunc(ULONG_PTR pParam)
+			close();
+		}
+
+		bool create(LPCTSTR pstrName = 0, BOOL bManualReset = FALSE, BOOL bInitialState = FALSE, LPSECURITY_ATTRIBUTES pEventAttributes = 0)
+		{
+			assert(pstrName == 0 || !::IsBadStringPtr(pstrName,(UINT)-1));
+			assert(event_==0);
+
+			event_ = ::CreateEvent(pEventAttributes, bManualReset, bInitialState, pstrName);
+			assert(event_!=0);
+
+			return event_ != 0;
+		}
+
+		bool open(LPCTSTR pstrName, DWORD dwDesiredAccess = EVENT_ALL_ACCESS, BOOL bInheritHandle = TRUE)
+		{
+			assert(!::IsBadStringPtr(pstrName,(UINT)-1));
+			assert(event_==0);
+
+			event_ = ::OpenEvent(dwDesiredAccess, bInheritHandle, pstrName);
+
+			return event_ != NULL;
+		}
+
+		bool is_open() const
+		{
+			return event_ != 0;
+		}
+
+		void close()
+		{
+			if( event_ == 0 ) 
+				return;
+
+			BOOL suc = ::CloseHandle(event_);
+			assert(suc);
+			event_ = 0;
+		}
+
+		void attach(HANDLE hEvent)
+		{
+			assert(event_==0);
+			event_= hEvent;
+		}  
+
+		HANDLE detach()
+		{
+			HANDLE hEvent = event_;
+			event_ = 0;
+			return hEvent;
+		}
+
+		bool reset_event()
+		{
+			assert(event_!=0);
+			return ::ResetEvent(event_) != 0;
+		}
+
+		bool set_event()
+		{
+			assert(event_!=0);
+			return ::SetEvent(event_) != 0;
+		}
+
+		bool pulse_event()
+		{
+			assert(event_!=0);
+			return ::PulseEvent(event_) != 0;
+		}
+
+		bool is_signalled() const
+		{
+			assert(event_!=0);
+			return ::WaitForSingleObject(event_, 0) == WAIT_OBJECT_0;
+		}
+
+		bool wait_for_event(DWORD dwTimeout = INFINITE)
+		{
+			assert(event_!=0);
+			return ::WaitForSingleObject(event_, dwTimeout) == WAIT_OBJECT_0;
+		}
+
+		operator HANDLE&()
+		{ 
+			return event_; 
+		}
+
+		operator const HANDLE &() const 
+		{ 
+			return event_; 
+		}
+	};
+
+	namespace timer {
+
+
+		// alterable IO
+		inline void WINAPI APCFunc(ULONG_PTR pParam)
+		{
+			// do nothing
+		}
+
+		namespace detail
+		{
+			struct timer_callback
 			{
-				// do nothing
+				typedef std::function<void()> callback_type;
+				callback_type handler_;
+
+				timer_callback(callback_type &&handler)
+					: handler_(std::move(handler))
+				{}
+
+				timer_callback &operator=(timer_callback &&rhs)
+				{
+					if( this != &rhs )
+					{
+						handler_ = std::move(rhs.handler_);
+					}
+
+					return *this;
+				}
+
+				void operator()(std::error_code, std::uint32_t)
+				{
+					handler_();
+				}
+
+				operator bool()
+				{
+					return handler_ != nullptr;
+				}
+			};
+		}
+
+
+		// ------------------------------------------------
+		// class TimerService
+		template < typename TimerImplT >
+		class timer_service_t
+		{
+		public:
+			typedef TimerImplT								timer_impl_t;
+			typedef std::shared_ptr<timer_impl_t>			timer_ptr;
+			typedef service::io_dispatcher_t						service_type;
+
+		private:
+			typedef detail::timer_callback					timer_callback_type;
+			typedef std::map<std::uint32_t, std::pair<timer_ptr, timer_callback_type>> timers_type;
+		
+			typedef std::mutex								Mutex;
+			typedef std::unique_lock<Mutex>					Lock;
+
+		private:
+			timers_type timers_;								// Timers
+			Mutex mutex_;
+
+			service_type &io_;									// Asynchronous Callback service
+
+			async::event_t update_;	
+			std::thread thread_;								// WaitForMutipleObjectEx
+
+		public:
+			timer_service_t(service_type &io)
+				: io_(io)
+				, thread_(std::bind(&timer_service_t::_ThreadCallback, this))
+			{}
+
+			~timer_service_t()
+			{
+				stop();
+				thread_.join();
 			}
 
-			namespace detail
+		private:
+			timer_service_t(const timer_service_t &);
+			timer_service_t &operator=(const timer_service_t &);
+
+
+		public:
+			void stop()
 			{
-				template < typename T >
-				struct find_timer_t
-				{
-					const T &timer_;
-
-					find_timer_t(const T &timer)
-						: timer_(timer)
-					{}
-
-					template < typename CallbackT >
-					bool operator()(const std::pair<T, CallbackT> &val) const
-					{
-						return val.first == timer_;
-					}
-				};
-
-
-				struct timer_callback
-				{
-					typedef std::function<void()> callback_type;
-					callback_type handler_;
-
-					timer_callback()
-					{}
-
-					timer_callback(const callback_type &handler)
-						: handler_(std::move(handler))
-					{}
-
-					timer_callback(timer_callback &&rhs)
-						: handler_(std::move(rhs.handler_))
-					{}
-
-					timer_callback &operator=(timer_callback &&rhs)
-					{
-						if( this != &rhs )
-						{
-							handler_ = std::move(rhs.handler_);
-						}
-
-						return *this;
-					}
-
-					void operator()(u_long, u_long)
-					{
-						handler_();
-					}
-
-					operator bool()
-					{
-						return handler_ != 0;
-					}
-				};
+				// 可提醒IO，退出监听线程
+				::QueueUserAPC(APCFunc, thread_.native_handle(), NULL);
 			}
-			// ------------------------------------------------
-			// class TimerService
 
-			template < typename TimerT, typename ServiceT >
-			class timer_service_t
+			// 增加一个Timer
+			template < typename HandlerT >
+			std::uint32_t add_timer(long period, long due, HandlerT &&handler)
 			{
-			public:
-				typedef TimerT							timer_type;
-				typedef std::shared_ptr<timer_type>		timer_ptr;
-				typedef ServiceT						service_type;
+				timer_ptr timer(new timer_impl_t(period, due));
 
-			private:
-				typedef detail::timer_callback						timer_callback_type;
-				typedef std::map<timer_ptr, timer_callback_type>	timers_type;
-				typedef typename timers_type::iterator				timers_iterator;
-				typedef multi_thread::critical_section				Mutex;
-				typedef multi_thread::auto_lock_t<Mutex>			Lock;
-
-			private:
-				timers_type timers_;									// Timers
-
-				multi_thread::thread_impl_ex thread_;			// WaitForMutipleObjectEx
-				multi_thread::event_t   update_;	
-				Mutex mutex_;
-
-				service_type &io_;								// Asynchronous Callback service
-
-			private:
-				timer_service_t(service_type &io)
-					: io_(io)
-				{
-					update_.create();
-
-					// 启动等待Timer线程
-					thread_.register_callback(std::bind(&timer_service_t::_ThreadCallback, this));
-					thread_.start();
-				}
-
-				~timer_service_t()
-				{
-					stop();
-				}
-
-				timer_service_t(const timer_service_t &);
-				timer_service_t &operator=(const timer_service_t &);
-				
-
-			public:
-				// 单件
-				static timer_service_t<timer_type, service_type> &instance(service_type &io)
-				{
-					static timer_service_t<timer_type, service_type> service(io);
-					return service;
-				}
-
-			public:
-				void stop()
-				{
-					// 可提醒IO，退出监听线程
-					::QueueUserAPC(APCFunc, thread_, NULL);
-
-					thread_.stop();
-				}
-
-				// 增加一个Timer
-				template < typename HandlerT >
-				timer_ptr add_timer(long period, long due, const HandlerT &handler)
-				{
-					timer_ptr timer(new timer_type(period, due));
-					
-					{
-						Lock lock(mutex_);
-						timers_.insert(std::make_pair(timer, timer_callback_type(handler)));
-					}
- 
-					// 设置更新事件信号
-					update_.set_event();
-
-					return timer;
-				}
-				timer_ptr add_timer(long period, long due)
-				{
-					return add_timer(period, due, timer_callback_type());
-				}
-
-				template < typename HandlerT >
-				void set_timer(const timer_ptr &timer, const HandlerT &handler)
+				std::uint32_t id = (std::uint32_t)timer->native_handle();
 				{
 					Lock lock(mutex_);
-					timers_iterator iter = timers_.find(timer);
-
-					if( iter == timers_.end() )
-						return;
-
-					iter->second = detail::timer_callback(handler);
-				}
-
-				void erase_timer(const timer_ptr &timer)
-				{
-					{
-						Lock lock(mutex_);
-						timers_iterator iter = timers_.find(timer);
-
-						if( iter != timers_.end() )
-							timers_.erase(iter);
-					}
+					assert(timers_.size() <= MAXIMUM_WAIT_OBJECTS);
+					if( timers_.size() > MAXIMUM_WAIT_OBJECTS )
+						throw std::out_of_range("size must less than MAXIMUM_WAIT_OBJECTS");
 					
-
-					// 设置更新事件信号
-					update_.set_event();
+					timers_.insert(std::make_pair(id, 
+						std::make_pair(timer, timer_callback_type(handler))));
 				}
 
-			private:
-				DWORD _ThreadCallback()
-				{
-					std::vector<HANDLE> handles;
+				// 设置更新事件信号
+				update_.set_event();
 
-					while(!thread_.is_aborted())
+				return id;
+			}
+
+			template < typename HandlerT >
+			void set_timer(std::uint32_t id, long period, long delay)
+			{
+				Lock lock(mutex_);
+				auto iter = timers_.find(id);
+
+				if( iter != timers_.end() )
+					iter->second.set_timer(period, delay);
+			}
+
+			void erase_timer(std::uint32_t id)
+			{
+				{
+					Lock lock(mutex_);
+					timers_.erase(id);
+				}
+
+				// 设置更新事件信号
+				update_.set_event();
+			}
+
+			void async_wait(std::uint32_t id)
+			{
+				Lock lock(mutex_);
+				auto iter = timers_.find(id);
+				if( iter != timers_.end() )
+					iter->second.first->async_wait();
+			}
+
+		private:
+			void _ThreadCallback()
+			{
+				std::vector<HANDLE> handles;
+
+				while(true)
+				{
+					// 如果有变化，则重置
+					if( WAIT_OBJECT_0 == ::WaitForSingleObject(update_, 0) )
 					{
-						// 如果有变化，则重置
-						if( WAIT_OBJECT_0 == ::WaitForSingleObject(update_, 0) )
+						_Copy(handles);
+					}
+
+					// 防止刚启动时没有timer生成
+					if( handles.size() == 0 )
+					{
+						if( WAIT_IO_COMPLETION == ::WaitForSingleObjectEx(update_, INFINITE, TRUE) )
+							break;
+						else
 						{
 							_Copy(handles);
 						}
-						
-						// 防止刚启动时没有timer生成
-						if( handles.size() == 0 )
-						{
-							if( WAIT_IO_COMPLETION == ::WaitForSingleObjectEx(update_, INFINITE, TRUE) )
-								break;
-							else
-							{
-								_Copy(handles);
-							}
-						}
-
-						// 等待Timer到点
-						if( handles.empty() )
-							continue;
-
-						DWORD res = ::WaitForMultipleObjectsEx(handles.size(), &handles[0], FALSE, INFINITE, TRUE);
-						if( res == WAIT_IO_COMPLETION )
-							break;
-
-						if( WAIT_OBJECT_0 == ::WaitForSingleObject(update_, 0) )
-						{
-							update_.set_event();
-							continue;
-						}
-						
-						if( res == WAIT_FAILED )
-						{
-							update_.set_event();
-							continue;
-						}
-						else if( res + WAIT_OBJECT_0 > timers_.size() )
-							throw ::exception::exception_base("handle out of range");
-
-						Lock lock(mutex_);
-						if( !timers_.empty() )
-						{
-							timers_iterator iter = timers_.begin();
-							std::advance(iter, WAIT_OBJECT_0 + res);
-
-							if( iter->second )
-								io_.post(iter->second);
-						}
 					}
 
-					::OutputDebugStringW(L"Exit Timer Service Thread\n");
-					return 0;
-				}
+					// 等待Timer到点
+					if( handles.empty() )
+						continue;
 
-				void _Copy(std::vector<HANDLE> &handles)
-				{
-					Lock lock(mutex_);
-					handles.clear();
-
-					for(timers_iterator iter = timers_.begin(); iter != timers_.end(); ++iter)
+					DWORD res = ::WaitForMultipleObjectsEx(handles.size(), &handles[0], FALSE, INFINITE, TRUE);
+					if( res == WAIT_IO_COMPLETION )
+						break;
+					else if( res == WAIT_FAILED )
 					{
-						handles.push_back(*(iter->first));
+						//assert(0);
+						update_.set_event();
+						continue;
+					}
+					else if( res + WAIT_OBJECT_0 > timers_.size() )
+						throw ::exception::exception_base(std::make_error_code(std::errc::result_out_of_range), "handle out of range");
+
+					Lock lock(mutex_);
+					auto iter = timers_.find((std::uint32_t)handles[res]);
+					if( iter != timers_.end() )
+					{
+						auto callback = iter->second.second;
+
+						lock.unlock();
+						io_.post(std::move(callback));
 					}
 				}
-			};
 
-			
-		}
+				::OutputDebugStringW(L"Exit Timer Service Thread\n");
+			}
+
+			void _Copy(std::vector<HANDLE> &handles)
+			{
+				handles.clear();
+
+				Lock lock(mutex_);
+				for(auto iter = timers_.begin(); iter != timers_.end(); ++iter)
+				{
+					handles.push_back((HANDLE)iter->first);
+				}
+			}
+		};
 	}
 }
 

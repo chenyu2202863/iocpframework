@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "read_write_test", "read_write_test\read_write_test.vcxproj", "{0B15ACC5-F67C-4F0A-BF24-657CFE3462B8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "move_buffer_test", "move_buffer_test\move_buffer_test.vcxproj", "{74B3FA5F-4EDE-4739-8380-C8B596EE643C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0B15ACC5-F67C-4F0A-BF24-657CFE3462B8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0B15ACC5-F67C-4F0A-BF24-657CFE3462B8}.Debug|Win32.Build.0 = Debug|Win32
+		{0B15ACC5-F67C-4F0A-BF24-657CFE3462B8}.Release|Win32.ActiveCfg = Release|Win32
+		{0B15ACC5-F67C-4F0A-BF24-657CFE3462B8}.Release|Win32.Build.0 = Release|Win32
+		{74B3FA5F-4EDE-4739-8380-C8B596EE643C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{74B3FA5F-4EDE-4739-8380-C8B596EE643C}.Debug|Win32.Build.0 = Debug|Win32
+		{74B3FA5F-4EDE-4739-8380-C8B596EE643C}.Release|Win32.ActiveCfg = Release|Win32
+		{74B3FA5F-4EDE-4739-8380-C8B596EE643C}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
+EndGlobal

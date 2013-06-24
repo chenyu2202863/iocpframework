@@ -1,21 +1,16 @@
-#ifndef __NETWORK_PROVIDER_HPP
-#define __NETWORK_PROVIDER_HPP
-
+#ifndef __ASYNC_NETWORK_PROVIDER_HPP
+#define __ASYNC_NETWORK_PROVIDER_HPP
 
 #include "../basic.hpp"
 #include "sock_init.hpp"
 
 
 
-namespace async
-{
-	namespace network
-	{
+namespace async { namespace network {
 
 		class socket_provider
 		{
-		private:
-			detail::sock_init_t<> sockInit_;	
+			details::sock_init_t<> sockInit_;	
 
 		public:
 			explicit socket_provider();

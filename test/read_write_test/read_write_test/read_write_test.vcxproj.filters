@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{37fb391c-07a6-449d-8f1c-9c9380d9f373}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\async">
+      <UniqueIdentifier>{07a2f4c1-2667-44be-9350-cd861aa1ca79}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\async\service">
+      <UniqueIdentifier>{8bf7b458-7014-4204-8bb5-abcdfe6613d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\exception">
+      <UniqueIdentifier>{07673ffc-8161-49c7-8631-0b6235237338}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\win32">
+      <UniqueIdentifier>{0807d5ac-923f-4ff9-b31a-db499bbe42cd}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\async_result.hpp">
+      <Filter>include\async\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\condition.hpp">
+      <Filter>include\async\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\dispatcher.hpp">
+      <Filter>include\async\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\exception.hpp">
+      <Filter>include\async\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\iocp.hpp">
+      <Filter>include\async\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\object_factory.hpp">
+      <Filter>include\async\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\read.hpp">
+      <Filter>include\async\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\read_write_buffer.hpp">
+      <Filter>include\async\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\write.hpp">
+      <Filter>include\async\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\exception\exception_base.hpp">
+      <Filter>include\exception</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\win32\debug\stack_walker.hpp">
+      <Filter>include\win32</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="read_write_test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\async_io\service\async_result.cpp">
+      <Filter>include\async\service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\async_io\service\dispatcher.cpp">
+      <Filter>include\async\service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\async_io\service\exception.cpp">
+      <Filter>include\async\service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\win32\debug\stack_walker.cpp">
+      <Filter>include\win32</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

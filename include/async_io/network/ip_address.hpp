@@ -1,30 +1,22 @@
-#ifndef __NETWORK_IP_ADDRESS_HPP
-#define __NETWORK_IP_ADDRESS_HPP
+#ifndef __ASYNC_NETWORK_IP_ADDRESS_HPP
+#define __ASYNC_NETWORK_IP_ADDRESS_HPP
 
-
-#include "../basic.hpp"
+#include <cstdint>
 #include <string>
 
 
-namespace async
-{
-
-
-	namespace network
-	{
+namespace async { namespace network {
 
 		class ip_address 
 		{
 		private:
-			u_long address_;
+			std::uint32_t address_;
 
 		public:
-			ip_address(u_long address);
+			ip_address(std::uint32_t address);
 
 		public:
-			u_long address() const
-			{ return address_; }
-			operator u_long() const
+			std::uint32_t address() const
 			{ return address_; }
 
 			bool operator==(const ip_address &ipaddr)

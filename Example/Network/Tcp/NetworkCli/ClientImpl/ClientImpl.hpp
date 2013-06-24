@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <network/tcp.hpp>
-
+#include <cstdint>
 
 using namespace async;
 
@@ -21,8 +21,14 @@ public:
 		, socket_(io, network::tcp::v4())
 	{
 		const size_t len = 1024;
-		buf_.resize(len);
-		std::fill(buf_.begin(), buf_.end(), 100);
+		buf_.resize(sizeof(std::uint32_t) + 128);
+		struct
+		{
+			std::uint32_t len;
+			std::uint16_t cmd;
+		}msg = { 128, 0x01 };
+		memcpy(buf_.data(), &msg, sizeof(msg));
+		memset(&buf_[sizeof(msg)], 10, 128 - sizeof(std::uint32_t));
 
 		try
 		{

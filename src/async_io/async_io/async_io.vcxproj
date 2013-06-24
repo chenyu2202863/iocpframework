@@ -20,12 +20,14 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v120_CTP_Nov2012</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v120_CTP_Nov2012</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -43,6 +45,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>../../../lib/</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -69,6 +72,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -81,26 +85,20 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\include\async_io\file\basic_file.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\file\detail\file_change_callback.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\file\detail\file_change_notify_hook.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\file\file.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\file\file_monitor.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\iocp\async_result.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\iocp\buffer.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\iocp\dispatcher.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\iocp\internal\condition.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\iocp\iocp.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\iocp\object_factory.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\iocp\pointer.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\iocp\read.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\iocp\read_write_buffer.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\iocp\win_exception.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\iocp\write.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\logger\detail\basic_logger.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\logger\detail\logger_impl.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\logger\detail\logger_service.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\logger\logger.hpp" />
+    <ClCompile Include="..\..\..\include\async_io\network.cpp" />
+    <ClCompile Include="..\..\..\include\async_io\network\accept.cpp" />
+    <ClCompile Include="..\..\..\include\async_io\network\ip_address.cpp" />
+    <ClCompile Include="..\..\..\include\async_io\network\socket.cpp" />
+    <ClCompile Include="..\..\..\include\async_io\network\socket_provider.cpp" />
+    <ClCompile Include="..\..\..\include\async_io\service\async_result.cpp" />
+    <ClCompile Include="..\..\..\include\async_io\service\dispatcher.cpp" />
+    <ClCompile Include="..\..\..\include\async_io\service\exception.cpp" />
+    <ClCompile Include="..\..\..\include\async_io\timer\impl\timer_impl.cpp" />
+    <ClCompile Include="..\..\..\include\win32\debug\stack_walker.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\include\async_io\basic.hpp" />
+    <ClInclude Include="..\..\..\include\async_io\network.hpp" />
     <ClInclude Include="..\..\..\include\async_io\network\accept.hpp" />
     <ClInclude Include="..\..\..\include\async_io\network\basic_acceptor.hpp" />
     <ClInclude Include="..\..\..\include\async_io\network\basic_datagram_socket.hpp" />
@@ -113,22 +111,21 @@
     <ClInclude Include="..\..\..\include\async_io\network\sock_init.hpp" />
     <ClInclude Include="..\..\..\include\async_io\network\tcp.hpp" />
     <ClInclude Include="..\..\..\include\async_io\network\udp.hpp" />
+    <ClInclude Include="..\..\..\include\async_io\service\async_result.hpp" />
+    <ClInclude Include="..\..\..\include\async_io\service\condition.hpp" />
+    <ClInclude Include="..\..\..\include\async_io\service\dispatcher.hpp" />
+    <ClInclude Include="..\..\..\include\async_io\service\exception.hpp" />
+    <ClInclude Include="..\..\..\include\async_io\service\iocp.hpp" />
+    <ClInclude Include="..\..\..\include\async_io\service\multi_buffer.hpp" />
+    <ClInclude Include="..\..\..\include\async_io\service\object_factory.hpp" />
+    <ClInclude Include="..\..\..\include\async_io\service\read.hpp" />
+    <ClInclude Include="..\..\..\include\async_io\service\read_write_buffer.hpp" />
+    <ClInclude Include="..\..\..\include\async_io\service\write.hpp" />
     <ClInclude Include="..\..\..\include\async_io\timer\impl\basic_timer.hpp" />
     <ClInclude Include="..\..\..\include\async_io\timer\impl\timer_impl.hpp" />
     <ClInclude Include="..\..\..\include\async_io\timer\impl\timer_service.hpp" />
     <ClInclude Include="..\..\..\include\async_io\timer\timer.hpp" />
     <ClInclude Include="..\..\..\include\win32\debug\stack_walker.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\include\async_io\file\file.cpp" />
-    <ClCompile Include="..\..\..\include\async_io\file\file_monitor.cpp" />
-    <ClCompile Include="..\..\..\include\async_io\iocp\async_result.cpp" />
-    <ClCompile Include="..\..\..\include\async_io\iocp\dispatcher.cpp" />
-    <ClCompile Include="..\..\..\include\async_io\iocp\win_exception.cpp" />
-    <ClCompile Include="..\..\..\include\async_io\network\ip_address.cpp" />
-    <ClCompile Include="..\..\..\include\async_io\network\socket.cpp" />
-    <ClCompile Include="..\..\..\include\async_io\network\socket_provider.cpp" />
-    <ClCompile Include="..\..\..\include\win32\debug\stack_walker.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

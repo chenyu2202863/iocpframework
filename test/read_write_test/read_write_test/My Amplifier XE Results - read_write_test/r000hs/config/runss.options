@@ -1,0 +1,19 @@
+-r
+G:\Program\iocpframework\test\read_write_test\read_write_test\My Amplifier XE Results - read_write_test\r000hs
+--data-limit-mb=500
+--stack-stitching
+--follow-child
+--type=frame:counters
+--stackwalk=offline
+--mrte-mode=auto
+--type=cpu:counters
+--type=cpu:stack
+--interval=10
+--search-dir
+sym=G:/Program/iocpframework/test/read_write_test/Release
+--search-dir
+sym=G:/Program/iocpframework/test/read_write_test
+--search-dir
+sym=srv*F:/MSSymbols
+--
+G:\Program\iocpframework\test\read_write_test\Release\read_write_test.exe

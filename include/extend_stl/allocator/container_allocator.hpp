@@ -83,7 +83,7 @@ namespace stdex
 			}
 
 			template<typename U>
-			void construct(pointer _Ptr, U _Val)
+			void construct(pointer _Ptr, U &&_Val)
 			{	
 				::new ((void *)_Ptr) T(std::forward<U>(_Val));
 			}

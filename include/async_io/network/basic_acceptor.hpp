@@ -1,115 +1,112 @@
-#ifndef __NETWORK_BASIC_ACCEPTOR_HPP
-#define __NETWORK_BASIC_ACCEPTOR_HPP
+#ifndef __ASYNC_NETWORK_BASIC_ACCEPTOR_HPP
+#define __ASYNC_NETWORK_BASIC_ACCEPTOR_HPP
 
+#include "socket.hpp"
 
+namespace async { namespace network {
 
-namespace async
-{
-	namespace network
+	// -------------------------------------------------
+	// class basic_acceptor_t
+
+	template < typename ProtocolT >
+	class basic_acceptor_t
 	{
+	public:
+		typedef ProtocolT							protocol_type;
+		typedef socket_handle_t::native_handle_type	native_handle_type;
+		typedef socket_handle_t::dispatcher_type	dispatcher_type;	
 
-		// -------------------------------------------------
-		// class basic_acceptor_t
+	private:
+		socket_handle_t impl_;
 
-		template < typename ProtocolT >
-		class basic_acceptor_t
+	public:
+		explicit basic_acceptor_t(dispatcher_type &io)
+			: impl_(io)
+		{}
+		explicit basic_acceptor_t(const socket_handle_t &sck)
+			: impl_(sck)
+		{}
+		basic_acceptor_t(dispatcher_type &io, const protocol_type &protocol)
+			: impl_(io, protocol.family(), protocol.type(), protocol.protocol())
+		{}
+		basic_acceptor_t(dispatcher_type &io, const protocol_type &protocol, std::uint16_t port, const ip_address &addr = INADDR_ANY, bool reuseAddr = true)
+			: impl_(io, protocol.family(), protocol.type(), protocol.protocol())
 		{
-		public:
-			typedef ProtocolT						protocol_type;
-			typedef socket_handle_ptr::element_type::native_handle_type	native_handle_type;
-			typedef socket_handle::dispatcher_type	dispatcher_type;	
+			if( reuseAddr )
+				impl_.set_option(reuse_addr(true));
 
-		private:
-			socket_handle_ptr impl_;
+			bind(protocol.family(), port, addr);
+			listen();
+		}
 
-		public:
-			explicit basic_acceptor_t(dispatcher_type &io)
-				: impl_(make_socket(io))
-			{}
-			explicit basic_acceptor_t(const socket_handle_ptr &impl)
-				: impl_(impl)
-			{}
-			basic_acceptor_t(dispatcher_type &io, const protocol_type &protocol)
-				: impl_(make_socket(io, protocol.family(), protocol.type(), protocol.protocol()))
-			{}
-			basic_acceptor_t(dispatcher_type &io, const protocol_type &protocol, u_short port, const ip_address &addr = INADDR_ANY, bool reuseAddr = true)
-				: impl_(make_socket(io, protocol.family(), protocol.type(), protocol.protocol()))
-			{
-				if( reuseAddr )
-					impl_->set_option(reuse_addr(true));
+	public:
+		native_handle_type native_handle() const
+		{
+			return impl_.native_handle();
+		}
 
-				bind(protocol.family(), port, addr);
-				listen();
-			}
+		void open(const protocol_type &protocol = protocol_type::v4())
+		{
+			if( protocol.Type() == SOCK_STREAM )
+				impl_.open(protocol.Family(), protocol.Type(), protocol.Protocol());
+			else
+				throw service::network_exception("not Stream socket!");
+		}
 
-		public:
-			native_handle_type native_handle() const
-			{
-				return impl_->native_handle();
-			}
+		bool is_open() const
+		{
+			return impl_.is_open();
+		}
 
-			void open(const protocol_type &protocol = protocol_type::v4())
-			{
-				if( protocol.Type() == SOCK_STREAM )
-					impl_->open(protocol.Family(), protocol.Type(), protocol.Protocol());
-				else
-					throw std::logic_error("not Stream socket!");
-			}
+		void close()
+		{
+			return impl_.close();
+		}
 
-			bool is_open() const
-			{
-				return impl_->is_open();
-			}
+		void cancel()
+		{
+			return impl_.cancel();
+		}
 
-			void close()
-			{
-				return impl_->close();
-			}
+		template<typename SetSocketOptionT>
+		bool set_option(const SetSocketOptionT &option)
+		{
+			return impl_.set_option(option);
+		}
+		template<typename GetSocketOptionT>
+		bool get_option(GetSocketOptionT &option)
+		{
+			return impl_.get_option(option)
+		}
+		template<typename IOControlCommandT>
+		bool io_control(IOControlCommandT &control)
+		{
+			return impl_.io_control(control);
+		}
 
-			void cancel()
-			{
-				return impl_->cancel();
-			}
+		void bind(int family, u_short port, const ip_address &addr)
+		{
+			// warning: only support AF_INET
+			impl_.bind(family, port, addr);
+		}
 
-			template<typename SetSocketOptionT>
-			bool set_option(const SetSocketOptionT &option)
-			{
-				return impl_->set_option(option);
-			}
-			template<typename GetSocketOptionT>
-			bool get_option(GetSocketOptionT &option)
-			{
-				return impl_->get_option(option)
-			}
-			template<typename IOControlCommandT>
-			bool io_control(IOControlCommandT &control)
-			{
-				return impl_->io_control(control);
-			}
+		void listen(int backlog = SOMAXCONN)
+		{
+			impl_.listen(backlog);
+		}
 
-			void bind(int family, u_short port, const ip_address &addr)
-			{
-				// warning: only support AF_INET
-				impl_->bind(family, port, addr);
-			}
+		socket_handle_t accept()
+		{
+			return impl_.accept();
+		}
 
-			void listen(int backlog = SOMAXCONN)
-			{
-				impl_->listen(backlog);
-			}
-
-			socket_handle_ptr accept()
-			{
-				return impl_->accept();
-			}
-
-			template < typename HandlerT >
-			void async_accept(const socket_handle_ptr &sck, const HandlerT &callback)
-			{
-				return impl_->async_accept(sck, callback);
-			}
-		};
-	}
+		template < typename HandlerT >
+		void async_accept(socket_handle_t &&sck, HandlerT &&callback)
+		{
+			return impl_.async_accept(std::move(sck), std::forward<HandlerT>(callback));
+		}
+	};
+}
 }
 
 

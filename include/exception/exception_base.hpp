@@ -1,13 +1,29 @@
 #ifndef __EXCEPTION_BASE_HPP
 #define __EXCEPTION_BASE_HPP
 
+
+/** @exception_base.hpp
+*
+* @author <陈煜>
+* [@author <chenyu2202863@yahoo.com.cn>]
+* @date <2012/10/08>
+* @version <0.1>
+*
+* 异常基础类，
+*	debug模式下，会输出抛出异常的调用堆栈
+*	release模式下，则不会输出堆栈
+* 你可以通过调试窗口查看堆栈信息
+*/
+
+#include <windows.h>
 #include <exception>
 #include <sstream>
 #include <string>
 #include <type_traits>
+#include <system_error>
 
-#include "../extend_stl/string/algorithm.hpp"
-#include "../win32/debug/stack_walker.hpp"
+#include "../extend_stl/string/algorithm.hpp"	// for stdex::to_string
+#include "../win32/debug/stack_walker.hpp"		// for win32::debug::dump_stack
 
 
 namespace exception
@@ -46,42 +62,64 @@ namespace exception
 				::OutputDebugStringA(dump_.str().c_str());
 			}
 		};
+
+		
+		struct dump_null
+		{
+			void dump() const
+			{}
+		};
 	}
 	
 
+	/**
+	* @class <exception_base_t>
+	* @brief 异常基础类，当抛出异常时在调试窗口打印堆栈信息
+	*
+	* DumpT dump policy
+	*	detail::dump_helper	debug模式使用
+	*	detail::dump_null	release模式使用
+	*/
 
-	class exception_base
+	template < typename DumpT >
+	class exception_base_t
 		: public std::exception
-#ifdef _DEBUG
-		, private detail::dump_helper
-#endif
+		, private DumpT
 	{
 	protected:
+		std::error_code code_;
 		std::string msg_;
 
 	public:
-		exception_base()
-		{}
-		exception_base(const std::string &msg)
+		exception_base_t(std::error_code code, const std::string &msg)
 			: msg_(msg)
+			, code_(code)
 		{}
-		virtual ~exception_base()
+		virtual ~exception_base_t()
 		{
 
 		}
 
 	protected:
-		exception_base(exception_base &rhs)
+		exception_base_t(exception_base_t &rhs)
 		{	
 			msg_.swap(rhs.msg_);
 		}
 
-		exception_base &operator=(const exception_base &);
+		exception_base_t &operator=(const exception_base_t &);
 		
 
 	public:
+		/**
+		* @brief 追加参数信息
+		* @param <val> <整型或浮点类型值>
+		* @exception <不会抛出任何异常>
+		* @return <exception_base_t &>
+		* @note <输入val必须为整型或浮点类型值>
+		* @remarks <>
+		*/
 		template < typename T >
-		exception_base &operator<<(const T &val)
+		exception_base_t &operator<<(const T &val)
 		{
 			static_assert(std::is_integral<T>::value || 
 				std::is_floating_point<T>::value, "T must be a number or char");
@@ -92,34 +130,67 @@ namespace exception
 			return *this;
 		}
 
-		exception_base &operator<<(const char *val)
+		/**
+		* @brief 追加参数信息
+		* @param <val> <ascii字符串>
+		* @exception <不会抛出任何异常>
+		* @return <exception_base_t &>
+		* @note <>
+		* @remarks <>
+		*/
+		exception_base_t &operator<<(const char *val)
 		{
 			msg_.append(val, ::strlen(val));
 
 			return *this;
 		}
 
-		exception_base &operator<<(const std::string &val)
+		/**
+		* @brief 追加参数信息
+		* @param <val> <std::string字符串>
+		* @exception <不会抛出任何异常>
+		* @return <exception_base_t &>
+		* @note <>
+		* @remarks <>
+		*/
+		exception_base_t &operator<<(const std::string &val)
 		{
 			msg_.append(val);
 
 			return *this;
 		}
 
+		/**
+		* @brief 捕获异常后再调试窗口打印堆栈信息
+		* @param <>
+		* @exception <不会抛出任何异常>
+		* @return <>
+		* @note <在捕获异常后调用>
+		* @remarks <>
+		*/
 		void dump() const
 		{
-#ifdef _DEBUG
-			detail::dump_helper::dump();
-#endif
+			DumpT::dump();
 		}
+
 	public:
 		virtual const char *what() const
 		{
 			return msg_.c_str();
 		}
+
+		std::error_code code() const
+		{
+			return code_;
+		}
 	};
 
 
+#ifdef _DEBUG
+	typedef exception_base_t<detail::dump_helper> exception_base;
+#else
+	typedef exception_base_t<detail::dump_null>	exception_base;
+#endif
 }
 
 

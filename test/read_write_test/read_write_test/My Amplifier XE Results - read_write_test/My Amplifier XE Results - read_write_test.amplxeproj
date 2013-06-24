@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+ <rdmgr>
+  <timestamp type="u64_t">1368862854</timestamp>
+  <hostname>YU_YU</hostname>
+  <os>windows</os>
+  <product>Intel® VTune™ Amplifier XE 2013 Update 6</product>
+  <buildNumber type="s32_t">283589</buildNumber>
+  <logicalCPUCount type="s32_t">2</logicalCPUCount>
+  <CPUFrequency type="s64_t">2100000000</CPUFrequency>
+ </rdmgr>
+ <All_Configurations-All_Platforms>
+  <analysis_type_settings>
+   <selected_analysis_type_path>F:\Development Tools\VTune Amplifier XE 2011\VTune Amplifier XE 2013\config\analysis_type\hotspots.cfg</selected_analysis_type_path>
+  </analysis_type_settings>
+ </All_Configurations-All_Platforms>
+ <engine>
+  <knobs>
+   <frameThreshold>&lt;bag xmlns:double=&quot;http://www.w3.org/2001/XMLSchema#double&quot;&gt;
+          &lt;minValueThresholds&gt;
+            &lt;double:minValueThreshold name=&quot;%SlowFrame&quot;&gt;0.0&lt;/double:minValueThreshold&gt;
+            &lt;minValueThreshold name=&quot;%GoodFrame&quot;&gt;$slowGoodFrameThreshold&lt;/minValueThreshold&gt;
+            &lt;minValueThreshold name=&quot;%FastFrame&quot;&gt;$goodFastFrameThreshold&lt;/minValueThreshold&gt;
+          &lt;/minValueThresholds&gt;
+        &lt;/bag&gt;</frameThreshold>
+   <utilizationThreshold>&lt;bag xmlns:double=&quot;http://www.w3.org/2001/XMLSchema#double&quot;
+                  xmlns:boolean=&quot;http://www.w3.org/2001/XMLSchema#boolean&quot;&gt;
+          &lt;minValueThresholds boolean:scaled=&quot;true&quot;&gt;
+            &lt;double:minValueThreshold name=&quot;%Idle&quot;&gt;-1&lt;/double:minValueThreshold&gt;
+            &lt;double:minValueThreshold name=&quot;%Poor&quot;&gt;0.0000001&lt;/double:minValueThreshold&gt;
+            &lt;double:minValueThreshold name=&quot;%Ok&quot;&gt;0.5001&lt;/double:minValueThreshold&gt;
+            &lt;double:minValueThreshold name=&quot;%Ideal&quot;&gt;0.85&lt;/double:minValueThreshold&gt;
+            &lt;double:minValueThreshold name=&quot;%Over&quot;&gt;1.15&lt;/double:minValueThreshold&gt;
+          &lt;/minValueThresholds&gt;
+        &lt;/bag&gt;</utilizationThreshold>
+  </knobs>
+ </engine>
+</root>

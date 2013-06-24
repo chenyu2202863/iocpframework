@@ -234,7 +234,7 @@ namespace memory_pool
 					end_free_ = 0;
 					start_free_ = reinterpret_cast<char *>(malloc_pool::allocate(szGet));
 					if( NULL == start_free_ )
-						throw std::bad_alloc("FixedMemoryPool");
+						throw std::bad_alloc();
 				}
 
 				// 存储起来提供释放

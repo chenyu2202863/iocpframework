@@ -2,57 +2,65 @@
 #define __NETWORK_ACCEPT_HPP
 
 
+#include <system_error>
+#include <cstdint>
+#include <functional>
 
-namespace async
-{
-	namespace iocp
+#include "../basic.hpp"
+#include "socket.hpp"
+
+namespace async {
+	namespace service
 	{
-		static std::tr1::_Ph<2> _Socket;
-		static std::tr1::_Ph<3> _Address;
+		extern std::_Ph<2> _Socket;
 	}
-	
-	namespace network
-	{
-		namespace detail
-		{
-		
-			static const size_t SOCKET_ADDR_SIZE = sizeof(sockaddr_in) + 16;
 
-			// Hook User Accept Callback
-			template < typename HandlerT >
-			struct accept_handle_t
-			{	
-				socket_handle &acceptor_;
-				socket_handle_ptr remote_sck_;
-				iocp::auto_buffer_ptr buf_;
-				HandlerT handler_;
+	namespace network { namespace details {
 
-				accept_handle_t(socket_handle &acceptor, const socket_handle_ptr &remoteSocket, const iocp::auto_buffer_ptr &buf, const HandlerT &handler)
-					: acceptor_(acceptor)
-					, remote_sck_(remoteSocket)
-					, buf_(buf)
-					, handler_(handler)
-				{}
+		static const size_t SOCKET_ADDR_SIZE = sizeof(sockaddr_in) + 16;
 
-			public:
-				void operator()(iocp::error_code error, u_long size)
-				{
-					// 复制Listen socket属性
-					update_accept_context context(acceptor_);
-					remote_sck_->set_option(context);
+		// Hook User Accept Callback
+		template < typename HandlerT >
+		struct accept_handle_t
+		{	
+			socket_handle_t &acceptor_;
+			socket_handle_t remote_sck_;
+			HandlerT handler_;
 
-					sockaddr *local = 0, *remote = 0;
-					int local_size = 0, remote_size = 0;
+			char address_buffer_[2 * SOCKET_ADDR_SIZE];
 
-					socket_provider::singleton().GetAcceptExSockaddrs(buf_->data(), 0, 
-						SOCKET_ADDR_SIZE, SOCKET_ADDR_SIZE, 
-						&local, &local_size, 
-						&remote, &remote_size);
+			accept_handle_t(socket_handle_t &acceptor, socket_handle_t &&remoteSocket, HandlerT &&handler)
+				: acceptor_(acceptor)
+				, remote_sck_(std::move(remoteSocket))
+				, handler_(std::move(handler))
+			{}
 
-					handler_(error, std::cref(remote_sck_), reinterpret_cast<SOCKADDR_IN *>(remote));
-				}
-			};
-		}
+			accept_handle_t(accept_handle_t &&rhs)
+				: acceptor_(rhs.acceptor_)
+				, remote_sck_(std::move(rhs.remote_sck_))
+				, handler_(std::move(rhs.handler_))
+			{}
+
+			~accept_handle_t()
+			{
+
+			}
+
+		private:
+			accept_handle_t(const accept_handle_t &);
+			accept_handle_t &operator=(const accept_handle_t &);
+
+		public:
+			void operator()(const std::error_code &error, std::uint32_t size)
+			{
+				// 复制Listen socket属性
+				update_accept_context context(acceptor_);
+				remote_sck_.set_option(context);
+
+				handler_(std::cref(error), std::ref(remote_sck_));
+			}
+		};
+	}
 
 	}
 

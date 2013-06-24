@@ -4,7 +4,7 @@
 #include <array>
 
 #include <network/tcp.hpp>
-#include <memory_pool/fixed_memory_pool.hpp>
+#include <../memory_pool/fixed_memory_pool.hpp>
 
 
 using namespace async;
@@ -61,8 +61,8 @@ public:
 	{
 		socket_.close();
 
-		readCallback_	= 0;
-		writeCallback_	= 0;
+		readCallback_	= nullptr;
+		writeCallback_	= nullptr;
 	}
 
 private:
@@ -143,7 +143,9 @@ public:
 	Server(iocp::io_dispatcher &io, short port)
 		: io_(io)
 		, acceptor_(io_, network::tcp::v4(), port)
-	{}
+	{
+
+	}
 
 	~Server()
 	{

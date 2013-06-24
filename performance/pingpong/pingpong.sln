@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pingpong", "pingpong\pingpong.vcxproj", "{F884C255-04E0-4D4F-9541-BE7DCF678A40}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "asio_pingpong", "asio_pingpong\asio_pingpong.vcxproj", "{084264D6-449E-484E-962C-FA6E425C27C3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9449693D-4B2B-463A-B6D6-1D5DB5902311}"
+	ProjectSection(SolutionItems) = preProject
+		Performance1.psess = Performance1.psess
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F884C255-04E0-4D4F-9541-BE7DCF678A40}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F884C255-04E0-4D4F-9541-BE7DCF678A40}.Debug|Win32.Build.0 = Debug|Win32
+		{F884C255-04E0-4D4F-9541-BE7DCF678A40}.Release|Win32.ActiveCfg = Release|Win32
+		{F884C255-04E0-4D4F-9541-BE7DCF678A40}.Release|Win32.Build.0 = Release|Win32
+		{084264D6-449E-484E-962C-FA6E425C27C3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{084264D6-449E-484E-962C-FA6E425C27C3}.Debug|Win32.Build.0 = Debug|Win32
+		{084264D6-449E-484E-962C-FA6E425C27C3}.Release|Win32.ActiveCfg = Release|Win32
+		{084264D6-449E-484E-962C-FA6E425C27C3}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
