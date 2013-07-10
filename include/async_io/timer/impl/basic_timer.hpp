@@ -1,8 +1,6 @@
 #ifndef __TIMER_BASIC_TIMER_HPP
 #define __TIMER_BASIC_TIMER_HPP
 
-#include "timer_service.hpp"
-
 
 namespace async { namespace timer {
 
@@ -57,6 +55,7 @@ namespace async { namespace timer {
 		{
 			assert(id_ != 0);
 			service_.erase_timer(id_);
+			id_ = 0;
 		}
 
 		// Òì²½µÈ´ý

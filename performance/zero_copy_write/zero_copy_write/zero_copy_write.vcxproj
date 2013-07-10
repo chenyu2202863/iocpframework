@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{74B3FA5F-4EDE-4739-8380-C8B596EE643C}</ProjectGuid>
+    <ProjectGuid>{E2C83173-5675-4F56-A5DA-78953B9CF318}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>move_buffer_test</RootNamespace>
+    <RootNamespace>zero_copy_write</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -25,7 +25,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120_CTP_Nov2012</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -50,9 +50,9 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>../../../include/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -66,8 +66,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>../../../include/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -80,6 +81,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\include\async_io\basic.hpp" />
     <ClInclude Include="..\..\..\include\async_io\network.hpp" />
     <ClInclude Include="..\..\..\include\async_io\network\accept.hpp" />
     <ClInclude Include="..\..\..\include\async_io\network\basic_acceptor.hpp" />
@@ -103,7 +105,9 @@
     <ClInclude Include="..\..\..\include\async_io\service\read.hpp" />
     <ClInclude Include="..\..\..\include\async_io\service\read_write_buffer.hpp" />
     <ClInclude Include="..\..\..\include\async_io\service\write.hpp" />
-    <ClInclude Include="..\..\..\include\exception\exception_base.hpp" />
+    <ClInclude Include="..\..\..\include\async_io\timer\impl\basic_timer.hpp" />
+    <ClInclude Include="..\..\..\include\async_io\timer\impl\timer_impl.hpp" />
+    <ClInclude Include="..\..\..\include\async_io\timer\impl\timer_service.hpp" />
     <ClInclude Include="..\..\..\include\win32\debug\stack_walker.hpp" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -117,12 +121,13 @@
     <ClCompile Include="..\..\..\include\async_io\service\async_result.cpp" />
     <ClCompile Include="..\..\..\include\async_io\service\dispatcher.cpp" />
     <ClCompile Include="..\..\..\include\async_io\service\exception.cpp" />
+    <ClCompile Include="..\..\..\include\async_io\timer\impl\timer_impl.cpp" />
     <ClCompile Include="..\..\..\include\win32\debug\stack_walker.cpp" />
-    <ClCompile Include="move_buffer_test.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="zero_copy_write.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

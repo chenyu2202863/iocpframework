@@ -1,0 +1,147 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{9aff37df-83ae-4cf5-9020-7ae6f2e31231}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\utility">
+      <UniqueIdentifier>{150118ef-d786-45ce-8ccf-0ef4d1130f17}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\async_io">
+      <UniqueIdentifier>{165f22ef-d695-4a5c-81c2-7653d9a72267}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\async_io\network">
+      <UniqueIdentifier>{c4f2b0c1-bed2-4455-9708-185241d8c54e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\async_io\service">
+      <UniqueIdentifier>{96af2942-eac3-49c6-9912-5c2202c7fbac}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\utility\circular_buffer.hpp">
+      <Filter>include\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network.hpp">
+      <Filter>include\async_io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\async_result.hpp">
+      <Filter>include\async_io\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\condition.hpp">
+      <Filter>include\async_io\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\dispatcher.hpp">
+      <Filter>include\async_io\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\exception.hpp">
+      <Filter>include\async_io\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\iocp.hpp">
+      <Filter>include\async_io\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\multi_buffer.hpp">
+      <Filter>include\async_io\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\object_factory.hpp">
+      <Filter>include\async_io\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\read.hpp">
+      <Filter>include\async_io\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\read_write_buffer.hpp">
+      <Filter>include\async_io\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\service\write.hpp">
+      <Filter>include\async_io\service</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\accept.hpp">
+      <Filter>include\async_io\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\basic_acceptor.hpp">
+      <Filter>include\async_io\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\basic_datagram_socket.hpp">
+      <Filter>include\async_io\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\basic_stream_socket.hpp">
+      <Filter>include\async_io\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\connect.hpp">
+      <Filter>include\async_io\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\ip_address.hpp">
+      <Filter>include\async_io\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\sock_init.hpp">
+      <Filter>include\async_io\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\socket.hpp">
+      <Filter>include\async_io\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\socket_option.hpp">
+      <Filter>include\async_io\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\socket_provider.hpp">
+      <Filter>include\async_io\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\tcp.hpp">
+      <Filter>include\async_io\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\async_io\network\udp.hpp">
+      <Filter>include\async_io\network</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="timing_wheel_test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\async_io\network.cpp">
+      <Filter>include\async_io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\async_io\service\async_result.cpp">
+      <Filter>include\async_io\service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\async_io\service\dispatcher.cpp">
+      <Filter>include\async_io\service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\async_io\service\exception.cpp">
+      <Filter>include\async_io\service</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\async_io\network\accept.cpp">
+      <Filter>include\async_io\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\async_io\network\ip_address.cpp">
+      <Filter>include\async_io\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\async_io\network\socket.cpp">
+      <Filter>include\async_io\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\include\async_io\network\socket_provider.cpp">
+      <Filter>include\async_io\network</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

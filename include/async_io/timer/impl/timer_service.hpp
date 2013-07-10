@@ -128,39 +128,6 @@ namespace async {
 			// do nothing
 		}
 
-		namespace detail
-		{
-			struct timer_callback
-			{
-				typedef std::function<void()> callback_type;
-				callback_type handler_;
-
-				timer_callback(callback_type &&handler)
-					: handler_(std::move(handler))
-				{}
-
-				timer_callback &operator=(timer_callback &&rhs)
-				{
-					if( this != &rhs )
-					{
-						handler_ = std::move(rhs.handler_);
-					}
-
-					return *this;
-				}
-
-				void operator()(std::error_code, std::uint32_t)
-				{
-					handler_();
-				}
-
-				operator bool()
-				{
-					return handler_ != nullptr;
-				}
-			};
-		}
-
 
 		// ------------------------------------------------
 		// class TimerService
@@ -170,13 +137,38 @@ namespace async {
 		public:
 			typedef TimerImplT								timer_impl_t;
 			typedef std::shared_ptr<timer_impl_t>			timer_ptr;
-			typedef service::io_dispatcher_t						service_type;
+			typedef service::io_dispatcher_t				service_type;
 
 		private:
-			typedef detail::timer_callback					timer_callback_type;
-			typedef std::map<std::uint32_t, std::pair<timer_ptr, timer_callback_type>> timers_type;
+			struct callback_handler_t
+			{
+				std::function<void()> handler_;
+
+				template < typename T >
+				callback_handler_t(T && handler)
+					: handler_(std::move(handler))
+				{}
+				~callback_handler_t()
+				{
+
+				}
+
+				callback_handler_t(callback_handler_t && rhs)
+					: handler_(std::move(rhs.handler_))
+				{}
+
+				void operator()(const std::error_code &, std::uint32_t)
+				{
+					handler_();
+				}
+
+			private:
+				callback_handler_t(const callback_handler_t &);
+				callback_handler_t &operator=(const callback_handler_t &);
+			};
+			typedef std::map<std::uint32_t, std::pair<timer_ptr, callback_handler_t>> timers_type;
 		
-			typedef std::mutex								Mutex;
+			typedef std::recursive_mutex					Mutex;
 			typedef std::unique_lock<Mutex>					Lock;
 
 		private:
@@ -225,8 +217,8 @@ namespace async {
 					if( timers_.size() > MAXIMUM_WAIT_OBJECTS )
 						throw std::out_of_range("size must less than MAXIMUM_WAIT_OBJECTS");
 					
-					timers_.insert(std::make_pair(id, 
-						std::make_pair(timer, timer_callback_type(handler))));
+					timers_.insert(std::move(std::make_pair(id, 
+						std::make_pair(std::move(timer), std::move(callback_handler_t(std::forward<HandlerT>(handler)))))));
 				}
 
 				// 设置更新事件信号
@@ -308,10 +300,9 @@ namespace async {
 					auto iter = timers_.find((std::uint32_t)handles[res]);
 					if( iter != timers_.end() )
 					{
-						auto callback = iter->second.second;
-
+						auto &callback = iter->second.second;
 						lock.unlock();
-						io_.post(std::move(callback));
+						io_.post(callback);
 					}
 				}
 

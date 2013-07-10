@@ -98,37 +98,23 @@ namespace async { namespace service {
 			for_each<I + 1, std::tuple_size<TupleT>::value - 1>(t, buffers);
 		}
 	}
-	
 
-	
-	/*template < typename HandlerT, typename ...T >
-	auto make_param(HandlerT &&handler, T &&...val)->
-	param_holder_t<decltype(std::make_tuple(std::forward<T>(val)...)), HandlerT>
-	{
-	auto val = std::make_tuple(std::forward<T>(val)...);
-	typedef decltype(val) tuple_t;
 
-	return param_holder_t<tuple_t, HandlerT>(std::forward<tuple_t>(val), std::forward<HandlerT>(handler));
-	}
-
-	auto param = make_param(std::move([](){}), std::move(10), std::move('a'));*/
-
-	template < typename TupleT, typename HandlerT >
+	template < typename HandlerT, typename ...Args >
 	struct static_param_holder_t
 		: HandlerT
 	{
-		enum { PARAM_SIZE = std::tuple_size<TupleT>::value };
+		typedef std::tuple<Args...>		tuple_t;
+		typedef HandlerT				handler_t;
+		typedef std::array<service::const_buffer_t, std::tuple_size<tuple_t>::value> buffers_t;
+		typedef std::true_type			is_static_param_t;
 
-		typedef TupleT			tuple_t;
-		typedef HandlerT		handler_t;
-		typedef std::array<service::const_buffer_t, PARAM_SIZE> buffers_t;
-		typedef std::true_type  is_static_param_t;
-
+		enum { PARAM_SIZE = std::tuple_size<tuple_t>::value };
 		tuple_t val_;
 
-		static_param_holder_t(tuple_t &&val, HandlerT &&handler)
+		static_param_holder_t(HandlerT &&handler, Args &&...args)
 			: HandlerT(std::move(handler))
-			, val_(std::move(val))
+			, val_(std::make_tuple(std::forward<Args>(args)...))
 		{}
 
 		static_param_holder_t(static_param_holder_t &&rhs)
@@ -150,27 +136,27 @@ namespace async { namespace service {
 		static_param_holder_t &operator=(const static_param_holder_t &);
 	};
 
-	template < typename TupleT, typename HandlerT >
-	static_param_holder_t<TupleT, HandlerT> make_static_param(TupleT &&tuple, HandlerT &&handler)
+	template < typename HandlerT, typename ...Args >
+	static_param_holder_t<HandlerT, Args...> make_static_param(HandlerT &&handler, Args &&...args)
 	{
-		return static_param_holder_t<TupleT, HandlerT>(std::forward<TupleT>(tuple), std::forward<HandlerT>(handler));
+		return static_param_holder_t<HandlerT, Args...>(std::forward<HandlerT>(handler), std::forward<Args>(args)...);
 	}
 
 
-	template < typename HandlerT, typename TupleT >
+	template < typename HandlerT, typename ...Args >
 	struct dynamic_param_holder_t
 		: HandlerT
 	{
-		typedef TupleT					tuple_t;
+		typedef std::tuple<Args...>		tuple_t;
 		typedef HandlerT				handler_t;
 		typedef const_array_buffer_t	buffers_t;
 		typedef std::false_type			is_static_param_t;
 
 		tuple_t tuple_;
 
-		dynamic_param_holder_t(HandlerT &&handler, tuple_t &&tuple)
+		dynamic_param_holder_t(HandlerT &&handler, Args &&...args)
 			: HandlerT(std::move(handler))
-			, tuple_(std::move(tuple))
+			, tuple_(std::make_tuple(args...))
 		{}
 
 		dynamic_param_holder_t(tuple_t &&tuple, HandlerT &&handler)
@@ -186,20 +172,21 @@ namespace async { namespace service {
 		buffers_t buffers() const
 		{
 			buffers_t buffer;
-			
-			//details::dynamic_tuple_buffer_t<std::tuple_size<tuple_t>::value>::make(tuple_, buffer);
+			enum { TUPLE_SIZE = std::tuple_size<tuple_t>::value };
 
-			details::for_each<0, std::tuple_size<TupleT>::value>(tuple_, buffer);
+			details::for_each<0, TUPLE_SIZE == 1 ? 0 : TUPLE_SIZE>(tuple_, buffer);
 			return buffer;
 		}
+
+	private:
+		dynamic_param_holder_t(const dynamic_param_holder_t &);
+		dynamic_param_holder_t &operator=(const dynamic_param_holder_t &);
 	};
 
-	template < typename TupleT, typename HandlerT >
-	dynamic_param_holder_t<HandlerT, TupleT> make_dynamic_param(TupleT &&tuple, HandlerT &&handler)
+	template < typename HandlerT, typename ...Args >
+	dynamic_param_holder_t<HandlerT, Args...> make_dynamic_param(HandlerT && handler, Args && ...args)
 	{
-		return dynamic_param_holder_t<HandlerT, TupleT>(
-			std::forward<HandlerT>(handler), 
-			std::forward<TupleT>(tuple));	
+		return dynamic_param_holder_t<HandlerT, Args...>(std::forward<HandlerT>(handler), std::forward<Args>(args)...);
 	}
 	
 }}

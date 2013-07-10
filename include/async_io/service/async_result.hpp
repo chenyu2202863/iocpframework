@@ -95,7 +95,7 @@ namespace async { namespace service {
 
 		virtual void invoke(const std::error_code &error, std::uint32_t size)
 		{
-			handler_(std::cref(error), size);
+			handler_(error, size);
 		}
 
 		virtual void deallocate()

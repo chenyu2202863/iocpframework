@@ -46,7 +46,7 @@ namespace async { namespace service {
 
 			transfers += ret;
 
-			callback(std::make_error_code((std::errc::errc)::GetLastError()), transfers);
+			callback(std::make_error_code((std::errc)::GetLastError()), transfers);
 		}
 
 		return transfers;
@@ -126,7 +126,7 @@ namespace async { namespace service {
 				transfers_ += size;
 				std::uint32_t left = total_ - transfers_;
 
-				if( transfers_ < total_ && size != 0 && error == 0 )
+				if( transfers_ < total_ && size != 0 && !error )
 				{
 					if( transfers_ < condition_() )
 					{
@@ -152,7 +152,7 @@ namespace async { namespace service {
 				}
 
 				// 回调
-				handler_(std::cref(error), transfers_);
+				handler_(error, transfers_);
 			}
 
 			friend void *allocate_handler(std::uint32_t sz, this_type *this_handler)
@@ -195,7 +195,7 @@ namespace async { namespace service {
 			{
 				transfers_ += size;
 
-				if( transfers_ < total_ && size != 0 && error == 0 )
+				if( transfers_ < total_ && size != 0 && !error )
 				{
 					if( transfers_ < condition_() )
 					{
@@ -215,7 +215,7 @@ namespace async { namespace service {
 				}
 
 				// 回调
-				handler_(std::cref(error), transfers_);
+				handler_(error, transfers_);
 			}
 		};
 	}
@@ -239,10 +239,9 @@ namespace async { namespace service {
 	template<typename SyncWriteStreamT, typename ConstBufferT, typename ComplateConditionT, typename HandlerT>
 	void async_write(SyncWriteStreamT &s, ConstBufferT &&buf, const ComplateConditionT &condition, HandlerT &&handler)
 	{
-		typedef std::remove_reference<ConstBufferT>::type const_buffer_t;
-		typedef details::write_handler_t<SyncWriteStreamT, const_buffer_t, ComplateConditionT, HandlerT> HookWriteHandler;
+		typedef details::write_handler_t<SyncWriteStreamT, ConstBufferT, ComplateConditionT, HandlerT> HookWriteHandler;
 
-		HookWriteHandler hook_handler(s, std::forward<const_buffer_t>(buf), buf.size(), condition, 0, std::forward<HandlerT>(handler));
+		HookWriteHandler hook_handler(s, std::forward<ConstBufferT>(buf), buf.size(), condition, 0, std::forward<HandlerT>(handler));
 		s.async_write(hook_handler.buffer_, std::forward<HookWriteHandler>(hook_handler));
 	}
 

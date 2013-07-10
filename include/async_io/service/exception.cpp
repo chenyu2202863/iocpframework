@@ -6,7 +6,7 @@
 namespace async { namespace service {
 
 	win32_exception_t::win32_exception_t(const std::string &msg, std::uint32_t error)
-		: ::exception::exception_base(std::make_error_code((std::errc::errc)error), "")
+		: ::exception::exception_base(std::make_error_code((std::errc)error), "")
 	{
 		std::ostringstream oss;
 		char *buffer = NULL;

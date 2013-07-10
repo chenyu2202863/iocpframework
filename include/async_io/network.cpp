@@ -55,73 +55,10 @@ namespace async { namespace network {
 		return win32::network::ip_2_string(win32::network::get_sck_ip(sck_.native_handle()));
 	}
 
-	void session::additional_data(void *data)
-	{
-		data_ = data;
-	}
 
-	void *session::additional_data() const
+	void session::shutdown()
 	{
-		return data_; 
-	}
-
-	template < typename HandlerT >
-	void session::_handle_read(const std::error_code &error, std::uint32_t size, const HandlerT &read_handler)
-	{
-		try
-		{
-			if( error == 0 )	// success
-			{
-				if( size == 0 )
-				{
-					// disconnect
-					disconnect();
-				}
-				else if( read_handler )
-					read_handler(shared_from_this(), size);
-			}
-			else
-			{
-				if( error_handler_ )
-				{
-					error_handler_(shared_from_this(), std::cref(error_msg(error)));
-				}
-				disconnect();
-			}
-		}
-		catch(...)
-		{
-			assert(0 && "has an exception in read_handler_");
-			error_handler_(shared_from_this(), "has an exception in read_handler");
-		}
-	}
-
-	template < typename HandlerT >
-	void session::_handle_write(const std::error_code &error, std::uint32_t size, const HandlerT &write_handler)
-	{
-		try
-		{
-			if( error == 0 )	// success
-			{
-				if( size == 0 )
-				{
-					disconnect();
-				}
-				else if( write_handler != 0 )
-					write_handler(shared_from_this(), size);
-			}
-			else
-			{
-				if( error_handler_ )
-					error_handler_(shared_from_this(), std::cref(error_msg(error)));
-				disconnect();
-			}
-		}
-		catch(...)
-		{
-			assert(0 && "has an exception in write_handler_");
-			error_handler_(shared_from_this(), "has an exception in write_handler_");
-		}
+		sck_.shutdown(SD_BOTH);
 	}
 
 	void session::disconnect()
@@ -152,8 +89,8 @@ namespace async { namespace network {
 		const disconnect_handler_type &disconnect_handler)
 	{
 		typedef stdex::allocator::pool_allocator_t<session, pool_t> pool_allocator_t;
-		pool_allocator_t pool_allocate(pool);
-		return std::allocate_shared<session>(pool_allocate, 
+
+		return std::allocate_shared<session>(pool_allocator_t(pool), 
 			io, 
 			std::forward<SocketT>(sck), 
 			error_handler, 
@@ -173,7 +110,7 @@ namespace async { namespace network {
 		std::unique_ptr<std::thread> thread_;
 
 		impl(std::uint16_t port, std::uint32_t thr_cnt)
-			: io_([this](const std::string &msg){ error_handle_(nullptr, std::cref(msg)); })
+			: io_([this](const std::string &msg){ error_handle_(nullptr, msg); })
 			, acceptor_(io_, tcp::v4(), port, INADDR_ANY, true)
 		{
 		}
@@ -182,9 +119,10 @@ namespace async { namespace network {
 		{
 			auto val = create_session(io_, std::move(remote_sck), error_handle_, disconnect_handle_);
 
-			if( error != 0 )
+			if( error )
 			{
-				error_handle_(std::cref(val), std::cref(error_msg(error)));
+				auto msg = error_msg(error);
+				error_handle_(val, msg);
 				return;
 			}
 
@@ -194,7 +132,7 @@ namespace async { namespace network {
 			if( accept_handle_ != nullptr )
 			{
 				auto address = val->get_ip();
-				accept_handle_(std::cref(val), std::cref(address));
+				accept_handle_(val, address);
 			}
 		}
 
@@ -222,16 +160,14 @@ namespace async { namespace network {
 
 					try
 					{
-						acceptor_.async_accept(std::move(sck), std::bind(&impl::_handle_accept, 
+						acceptor_.async_accept(std::move(sck), std::move(std::bind(&impl::_handle_accept, 
 							this, 
 							service::_Error, 
-							service::_Socket));
+							service::_Socket)));
 					}
 					catch(std::exception &e)
 					{
-						error_handle_(
-							create_session(io_, std::move(sck), error_handle_, disconnect_handle_), 
-							std::cref(std::string(e.what())));
+						error_handle_(create_session(io_, std::move(sck), error_handle_, disconnect_handle_), e.what());
 					}
 				}
 
@@ -354,20 +290,20 @@ namespace async { namespace network {
 			//	std::bind(&impl::_on_connect, shared_from_this(), service::_Error));
 
 			socket_.connect(port, network::ip_address::parse(ip));
-			_on_connect(std::make_error_code((std::errc::errc)::GetLastError()));
+			_on_connect(std::make_error_code((std::errc)::GetLastError()));
 		}
 		catch(exception::exception_base &e)
 		{
 			e.dump();
 
 			if( error_handle_ )
-				error_handle_(std::cref(std::string(e.what())));
+				error_handle_(std::string(e.what()));
 			return false;
 		}
 		catch(std::exception &e)
 		{
 			if( error_handle_ )
-				error_handle_(std::cref(std::string(e.what())));
+				error_handle_(std::string(e.what()));
 			return false;
 		}
 
@@ -392,7 +328,7 @@ namespace async { namespace network {
 			e.dump();
 
 			if( error_handle_ )
-				error_handle_(std::cref(std::string(e.what())));
+				error_handle_(std::string(e.what()));
 
 			disconnect();
 			return 0;
@@ -400,7 +336,7 @@ namespace async { namespace network {
 		catch(std::exception &e)
 		{
 			if( error_handle_ )
-				error_handle_(std::cref(std::string(e.what())));
+				error_handle_(std::string(e.what()));
 
 			disconnect();
 			return 0;
@@ -418,7 +354,7 @@ namespace async { namespace network {
 			e.dump();
 
 			if( error_handle_ )
-				error_handle_(std::cref(std::string(e.what())));
+				error_handle_(std::string(e.what()));
 
 			disconnect();
 			return 0;
@@ -426,7 +362,7 @@ namespace async { namespace network {
 		catch(std::exception &e)
 		{
 			if( error_handle_ )
-				error_handle_(std::cref(std::string(e.what())));
+				error_handle_(std::string(e.what()));
 
 			disconnect();
 			return 0;
@@ -455,7 +391,7 @@ namespace async { namespace network {
 			if( connect_handle_ )
 				connect_handle_(error.value() == 0);
 
-			if( error == 0 )
+			if( !error )
 			{
 				socket_.set_option(network::no_delay(true));
 				socket_.set_option(network::linger(true, 0));
@@ -465,7 +401,7 @@ namespace async { namespace network {
 			else
 			{
 				if( error_handle_ )
-					error_handle_(std::cref(error_msg(error)));
+					error_handle_(error_msg(error));
 				disconnect();
 			}
 		}

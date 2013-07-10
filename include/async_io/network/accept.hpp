@@ -57,7 +57,7 @@ namespace async {
 				update_accept_context context(acceptor_);
 				remote_sck_.set_option(context);
 
-				handler_(std::cref(error), std::ref(remote_sck_));
+				handler_(error, remote_sck_);
 			}
 		};
 	}

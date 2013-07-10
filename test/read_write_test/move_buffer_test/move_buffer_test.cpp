@@ -53,27 +53,30 @@ int _tmain(int argc, _TCHAR* argv[])
 	std::string val2xx = "123";
 	std::vector<char> val3xx(10, 'a');
 
-	auto bufferxx = std::make_tuple(std::move(valxx), std::move(val2xx), std::move(val3xx));
-	auto paramxx = service::make_static_param(
-		std::move(bufferxx), 
-		std::move([](const session_ptr &session, std::uint32_t len)
+	auto param1 = service::make_static_param([](const session_ptr &session)
 	{
 
-	}));
+	}, std::move(valxx), std::move(val2xx), std::move(val3xx));
 
-	svr.register_accept_handler([&buf, &paramxx](const session_ptr &session, const std::string &ip)->bool
+
+	
+
+	svr.register_accept_handler([&buf](const session_ptr &session, const std::string &ip)->bool
 	{
 		std::cout << "accept remote: " << ip << std::endl;
 
-		auto recv_handler = [&buf, &paramxx](const session_ptr &session, std::uint32_t len)
+		
+		auto recv_handler = [&buf](const session_ptr &session)
 		{
 			std::cout << buf << std::endl;
-			session->async_write(std::move(paramxx));
-		};
 
+			//session->async_write(std::move(param1));
+
+		};
+		
 		session->async_read(std::move(service::mutable_buffer_t(buf, sizeof(buf))), std::move(recv_handler));
 
-
+		
 		return true;
 	});
 
@@ -90,7 +93,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	svr.start();
 
-	service::io_dispatcher_t io(1);
+	service::io_dispatcher_t io([](const std::string &err){ std::cerr << err << std::endl; }, 1);
 	async::timer::win_timer_service_t timer_svr(io);
 
 	client cli(io, timer_svr);
@@ -99,25 +102,21 @@ int _tmain(int argc, _TCHAR* argv[])
 		return -1;
 
 	int header_len = 10;
-	std::string val2 = "123";
+	std::string val2 = "123456";
 	std::vector<char> val3(10, 'a');
 
-	auto buffer = std::make_tuple(header_len, std::move(val2), std::move(val3));
-	auto param = service::make_static_param(std::move(buffer), std::move([](std::uint32_t len)
+	auto param2 = service::make_static_param([]()
 	{
-		std::cout << len << std::endl;
-	}));
+	}, std::move(header_len), std::move(val2), std::move(val3));
 
-	cli.async_send(std::move(param));
+	cli.async_send(std::move(param2));
 
 	char recv_buf[15] = {0};
-	cli.async_recv(recv_buf, sizeof(recv_buf), [](std::uint32_t len)
+	cli.async_recv(recv_buf, sizeof(recv_buf), []()
 	{
+
 	});
 
-	valxx = 2;
-	val2xx = "456";
-	val3xx.insert(val3xx.begin(), 1024 * 1024 * 100, 'x');
 
 	struct custom_data_t
 	{
@@ -144,14 +143,10 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 	}val4xxx;
 
-	auto dynamic_param = service::make_dynamic_param(
-		std::move(std::make_tuple(std::move(valxx), std::move(val2xx), std::move(val3xx), std::move(val4xxx))),
-		std::move([](std::uint32_t len)
+	auto param3 = service::make_dynamic_param([]()
 	{
-
-	}));
-	
-	cli.async_send(std::move(dynamic_param));
+	}, std::move(val4xxx));
+	cli.async_send(std::move(param3));
 
 	
 

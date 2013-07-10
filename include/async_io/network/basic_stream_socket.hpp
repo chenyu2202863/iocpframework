@@ -141,8 +141,7 @@ namespace async { namespace network {
 		template < typename ParamT >
 		void async_write(ParamT &&callback)
 		{
-			typedef ParamT param_t;
-			return impl_.async_write(std::forward<param_t>(callback));
+			return impl_.async_write(std::forward<ParamT>(callback));
 		}
 
 		// 阻塞式接收数据直到成功或出错
