@@ -38,7 +38,7 @@ namespace async { namespace network {
 		struct holder_t
 		{
 			virtual ~holder_t() {}
-			virtual const void *get() const = 0;
+			virtual void *get() = 0;
 		};
 
 		template < typename T >
@@ -51,9 +51,9 @@ namespace async { namespace network {
 				: val_(val)
 			{}
 
-			virtual const void *get() const
+			virtual void *get()
 			{
-				return &t;
+				return &val_;
 			}
 		};
 
@@ -163,9 +163,7 @@ namespace async { namespace network {
 			auto this_val = shared_from_this();
 			auto handler_val = utility::make_move_obj(std::forward<HandlerT>(handler));
 
-			service::async_read(sck_,
-				buffer,
-				service::transfer_at_least(min_len),
+			sck_.async_read(buffer, 
 				[this_val, handler_val](const std::error_code &err, std::uint32_t len)
 			{
 				this_val->_handle_read(err, len, handler_val.value_);
@@ -226,7 +224,7 @@ namespace async { namespace network {
 			handler();
 			return true;
 		}
-		catch (exception::exception_base &e)
+		catch (::exception::exception_base &e)
 		{
 			e.dump();
 
@@ -291,7 +289,7 @@ namespace async { namespace network {
 					disconnect();
 				}
 				else
-					write_handler(shared_from_this());
+					write_handler(shared_from_this(), size);
 			}
 			else
 			{
@@ -310,14 +308,14 @@ namespace async { namespace network {
 	template < typename T, typename AlocatorT >
 	void session::additional_data(const T &t, const AlocatorT &allocator)
 	{
-		data_ = std::allocate_shared<holder_impl_t<T>>(allocator, std::forward<T>(t));
+		data_ = std::allocate_shared<holder_impl_t<T>>(allocator, t);
 	}
 
 	template < typename T >
 	T &session::additional_data()
 	{
 		assert(data_ && "data is empty");
-		const void *val = data_->get();
+		void *val = data_->get();
 
 		return *static_cast<T *>(val);
 	}
@@ -399,13 +397,18 @@ namespace async { namespace network {
 
 		template < typename HandlerT >
 		bool async_recv(char *buf, std::uint32_t len, HandlerT &&handler);
+		template < typename HandlerT >
+		bool async_read_some(service::mutable_buffer_t &&buffer, std::uint32_t min_len, HandlerT &&handler);
 
-		std::uint32_t send(const char *buf, std::uint32_t len);
-		std::uint32_t recv(char *buf, std::uint32_t len);
+
+		bool send(const char *buf, std::uint32_t len);
+		bool recv(char *buf, std::uint32_t len);
 
 		void disconnect();
 
 	private:
+		template < typename HandlerT >
+		bool _run_impl(HandlerT && handler);
 		void _on_connect(const std::error_code &errorerror);
 		
 	};
@@ -443,7 +446,7 @@ namespace async { namespace network {
 					session_.disconnect();
 				}
 				else
-					static_cast<HandlerT *>(this)->operator()();
+					static_cast<HandlerT *>(this)->operator()(size);
 			}
 			else
 			{
@@ -469,97 +472,62 @@ namespace async { namespace network {
 	template < typename BufferT, typename HandlerT >
 	bool client::async_send(BufferT &&buf, HandlerT &&handler)
 	{
-		try
+		return _run_impl([&]()
 		{
 			service::async_write(socket_, std::forward<BufferT>(buf), service::transfer_all(),
 				std::move(cli_handler_wrapper_t<HandlerT>(*this, error_handle_, std::forward<HandlerT>(handler))));
-		}
-		catch(exception::exception_base &e)
-		{
-			e.dump();
-
-			if( error_handle_ )
-				error_handle_(std::string(e.what()));
-			disconnect();
-			return false;
-		}
-		catch(std::exception &e)
-		{
-			if( error_handle_ )
-				error_handle_(std::string(e.what()));
-			disconnect();
-			return false;
-		}
-
-		return true;
+		});
 	}
 
 	template < typename ParamT >
 	bool client::async_send(ParamT &&param)
 	{
-		try
+		return _run_impl([&]()
 		{
 			static_assert(std::has_move_constructor<ParamT>::value, "ParamT must has move constructor");
 
 			socket_.async_write(std::move(cli_handler_wrapper_t<ParamT>(*this, error_handle_, std::forward<ParamT>(param))));
-		}
-		catch(exception::exception_base &e)
-		{
-			e.dump();
-
-			if( error_handle_ )
-				error_handle_(std::string(e.what()));
-			disconnect();
-			return false;
-		}
-		catch(std::exception &e)
-		{
-			if( error_handle_ )
-				error_handle_(std::string(e.what()));
-			disconnect();
-			return false;
-		}
-
-		return true;
+		});
 	}
 
 	template < typename HandlerT >
 	bool client::async_send(const char *buf, std::uint32_t len, HandlerT &&handler)
 	{
-		try
+		return _run_impl([&]()
 		{
 			service::async_write(socket_, service::buffer(buf, len), service::transfer_all(),
-				std::move(cli_handler_wrapper_t<HandlerT>(*this, error_handle_, std::forward<HandlerT>(handler))));
-		}
-		catch(exception::exception_base &e)
-		{
-			e.dump();
-
-			if( error_handle_ )
-				error_handle_(std::string(e.what()));
-			disconnect();
-			return false;
-		}
-		catch(std::exception &e)
-		{
-			if( error_handle_ )
-				error_handle_(std::string(e.what()));
-			disconnect();
-			return false;
-		}
-
-		return true;
+								 std::move(cli_handler_wrapper_t<HandlerT>(*this, error_handle_, std::forward<HandlerT>(handler))));
+		});
 	}
 
 	template < typename HandlerT >
 	bool client::async_recv(char *buf, std::uint32_t len, HandlerT &&handler)
 	{
-		try
+		return _run_impl([&]()
 		{
 			service::async_read(socket_, async::service::buffer(buf, len), service::transfer_all(), 
 				std::move(cli_handler_wrapper_t<HandlerT>(*this, error_handle_, std::forward<HandlerT>(handler))));
+		});
+	}
+
+	template < typename HandlerT >
+	bool client::async_read_some(service::mutable_buffer_t && buffer, std::uint32_t min_len, HandlerT && handler)
+	{
+		return _run_impl([&]()
+		{
+			socket_.async_read(buffer, std::move(cli_handler_wrapper_t<HandlerT>(*this, error_handle_, std::forward<HandlerT>(handler))));
+		});
+	}
+
+	template < typename HandlerT >
+	bool client::_run_impl(HandlerT && handler)
+	{
+		try
+		{
+			handler();
+			return true;
 		}
-		catch(exception::exception_base &e)
+		catch(::exception::exception_base &e )
 		{
 			e.dump();
 
@@ -569,7 +537,7 @@ namespace async { namespace network {
 			disconnect();
 			return false;
 		}
-		catch(std::exception &e)
+		catch( std::exception &e )
 		{
 			if( error_handle_ )
 				error_handle_(std::string(e.what()));
@@ -577,8 +545,6 @@ namespace async { namespace network {
 			disconnect();
 			return false;
 		}
-
-		return true;
 	}
 }
 }

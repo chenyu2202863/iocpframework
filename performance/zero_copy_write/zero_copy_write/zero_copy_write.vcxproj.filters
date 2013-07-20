@@ -129,6 +129,9 @@
     <ClInclude Include="..\..\..\include\win32\debug\stack_walker.hpp">
       <Filter>include\win32\debug</Filter>
     </ClInclude>
+    <ClInclude Include="arg_helper.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

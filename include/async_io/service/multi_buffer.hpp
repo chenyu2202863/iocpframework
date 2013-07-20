@@ -14,7 +14,7 @@ namespace async { namespace service {
 	namespace details
 	{
 		template < typename T >
-		service::const_buffer_t translate_to_buffer(const T &val, 
+		const_buffer_t translate_to_buffer(const T &val, 
 			typename std::enable_if<std::is_pod<T>::value>::type * = nullptr)
 		{
 			return service::const_buffer_t(reinterpret_cast<const char *>(&val), sizeof(val));
@@ -28,13 +28,15 @@ namespace async { namespace service {
 		}
 
 		template < typename CharT, typename CharTraits, typename AllocatorT >
-		service::const_buffer_t translate_to_buffer(const std::basic_string<CharT, CharTraits, AllocatorT> &val)
+		const_array_buffer_t translate_to_buffer(const std::basic_string<CharT, CharTraits, AllocatorT> &val)
 		{
-			return service::const_buffer_t(val.data(), val.size());
+			const_array_buffer_t array_buffer;
+			array_buffer << const_buffer_t(val.size(), )
+				<< const_buffer_t(val.data(), val.size());
 		}
 
 		template < typename T, typename AllocatorT >
-		service::const_buffer_t translate_to_buffer(const std::vector<T, AllocatorT> &val)
+		const_array_buffer_t translate_to_buffer(const std::vector<T, AllocatorT> &val)
 		{
 			static_assert(std::is_pod<T>::value, "T must be a pod type");
 			return service::const_buffer_t(val.data(), val.size() * sizeof(T));

@@ -25,7 +25,8 @@ namespace serialize
 			static void push(serialize_t<CharT, OutT> &os, const U &val, 
 				typename std::enable_if<
 				std::is_integral<U>::value || 
-				std::is_floating_point<U>::value
+				std::is_floating_point<U>::value ||
+				std::is_enum<U>::value
 				>::type * = nullptr)
 			{
 				os.push(val);
@@ -43,7 +44,8 @@ namespace serialize
 			static void pop(serialize_t<CharT, OutT> &os, U &val, 
 				typename std::enable_if<
 				std::is_integral<U>::value ||
-				std::is_floating_point<T>::value
+				std::is_floating_point<U>::value ||
+				std::is_enum<U>::value
 				>::type * = nullptr)
 			{
 				os.pop(val);

@@ -14,14 +14,13 @@
 #include <async_io/network.hpp>
 #include <serialize/serialize.hpp>
 
+#include "arg_helper.hpp"
+
 using namespace async;
 using namespace network;
 
-#ifndef min
-#undef min
-#endif
 
-static const int cnt = 10000;
+static const int cnt = 100000;
 
 typedef std::shared_ptr<char> buffer_data_t;
 typedef std::pair<std::uint32_t, buffer_data_t> buffer_t;
@@ -57,9 +56,9 @@ struct multi_buffer_decode_t
 
 	void handle(const char *buffer, std::uint32_t len)
 	{
-		if (tmp_buffer_.first == 0)
+		if( tmp_buffer_.first == 0 )
 		{
-			if (len < sizeof(std::uint32_t))
+			if( len < sizeof(std::uint32_t) )
 			{
 				std::copy(buffer, buffer + len, header_data_);
 				header_len_ = len;
@@ -67,11 +66,11 @@ struct multi_buffer_decode_t
 			}
 
 			std::uint32_t data_len = 0;
-			if (header_len_ != 0)
+			if( header_len_ != 0 )
 			{
 				auto level_header_len = sizeof(std::uint32_t) - header_len_;
-				std::copy(buffer, buffer + level_header_len, 
-					stdext::make_unchecked_array_iterator(header_data_ + header_len_));
+				std::copy(buffer, buffer + level_header_len,
+						  stdext::make_unchecked_array_iterator(header_data_ + header_len_));
 				data_len = *reinterpret_cast<std::uint32_t *>(header_data_);
 				header_len_ = 0;
 
@@ -91,23 +90,23 @@ struct multi_buffer_decode_t
 			buffer_data.second = make_buffer(data_len);
 
 
-			if (data_len == len)
+			if( data_len == len )
 			{
-				std::copy(buffer, buffer + data_len, 
-					stdext::make_unchecked_array_iterator(buffer_data.second.get()));
+				std::copy(buffer, buffer + data_len,
+						  stdext::make_unchecked_array_iterator(buffer_data.second.get()));
 				buffer_callback_(std::move(buffer_data));
 			}
-			else if ( data_len > len )
+			else if( data_len > len )
 			{
-				std::copy(buffer, buffer + len, 
-					stdext::make_unchecked_array_iterator(buffer_data.second.get()));
+				std::copy(buffer, buffer + len,
+						  stdext::make_unchecked_array_iterator(buffer_data.second.get()));
 				tmp_buffer_len_ = len;
 				tmp_buffer_ = buffer_data;
 			}
 			else
 			{
-				std::copy(buffer, buffer + data_len, 
-					stdext::make_unchecked_array_iterator(buffer_data.second.get()));
+				std::copy(buffer, buffer + data_len,
+						  stdext::make_unchecked_array_iterator(buffer_data.second.get()));
 				buffer_callback_(buffer_data);
 
 				handle(buffer + data_len, len - data_len);
@@ -116,20 +115,31 @@ struct multi_buffer_decode_t
 		else
 		{
 			auto over_len = tmp_buffer_.first - tmp_buffer_len_;
-			std::copy(buffer, buffer + over_len, 
-				stdext::make_unchecked_array_iterator(tmp_buffer_.second.get() + tmp_buffer_len_));
+			std::copy(buffer, buffer + over_len,
+					  stdext::make_unchecked_array_iterator(tmp_buffer_.second.get() + tmp_buffer_len_));
 			buffer_callback_(tmp_buffer_);
 			tmp_buffer_.first = 0;
 			tmp_buffer_len_ = 0;
 
 			len -= over_len;
-			if ( len > 0 )
+			if( len > 0 )
 				handle(buffer + over_len, len);
 		}
 	}
 };
 
-multi_buffer_decode_t buffer_decode([](const buffer_t &buffer){ std::cout << "ok" << std::endl; });
+multi_buffer_decode_t buffer_decode([](const buffer_t &buffer)
+{ 
+	std::string val2;
+	std::vector<char> val3;
+	std::vector<std::string> val4;
+	std::map<int, std::string> val5;
+	auto len = 0;
+
+	serialize::mem_serialize os(buffer.second.get(), buffer.first);
+	os >> len >> val2 >> val3 >> val4 >> val5;
+	//std::cout << "ok" << std::endl;
+});
 
 std::array<char, 4192> buffer;
 
@@ -142,6 +152,22 @@ void recv_handler(const session_ptr &session)
 		buffer_decode.handle(buffer.data(), len);
 		recv_handler(session);
 	});
+}
+
+
+
+
+template < typename ConnectionT, typename ...Args >
+void async_send(ConnectionT &connector, Args &&...args)
+{
+	std::uint32_t len = 0;
+	baimo::network::paramter_size(len, args...);
+
+	auto param = service::make_dynamic_param([]()
+	{
+	}, std::move(len), std::forward<Args>( args )...);
+
+	connector.async_send(std::move(param));
 }
 
 int _tmain(int argc, _TCHAR* argv[])
@@ -174,73 +200,55 @@ int _tmain(int argc, _TCHAR* argv[])
 		return -1;
 
 	
-	std::cout << std::endl << "static param test: " << std::endl;
-	{
-		
-		utility::performance_t per;
+	//std::cout << std::endl << "static param test: " << std::endl;
+	//{
+	//	
+	//	utility::performance_t per;
 
-		
-		for (volatile auto i = 0; i != cnt; ++i)
-		{
-			std::string val2 = "abcdefghijklmnopqrstuvwxyz";
-			std::vector<char> val3(100, 'a');
-			std::vector<char> val4(100, 'b');
-			auto len = val2.size() + val3.size() + val4.size();
+	//	
+	//	for (volatile auto i = 0; i != cnt; ++i)
+	//	{
+	//		std::string val2 = "abcdefghijklmnopqrstuvwxyz";
+	//		std::vector<char> val3(100, 'a');
+	//		std::vector<std::pair<std::uint32_t, std::string>> val4(100, {val2.size(), val2});
+	//		std::map<int, std::pair<std::uint32_t, std::string>> val5;
+	//		val5.insert( {1, {val2.size(), val2}});
+	//		val5.insert( {2, {val2.size(), val2}});
 
-			auto param = service::make_static_param([]()
-			{
-			}, std::move(len), std::move(val2), std::move(val3), std::move(val4));
+	//		auto len = 11;
 
+	//		async_send(cli,
+	//				   /* baimo::network::make_arg(std::move(len)),
+	//				   baimo::network::make_arg(std::move(val2)),
+	//				   baimo::network::make_arg(std::move(val3)),
+	//				   baimo::network::make_arg(std::move(val4)),*/
+	//				   baimo::network::make_arg(std::move(val5)));
+	//	}
 
-			cli.async_send(std::move(param));
-		}
+	//	per.time(std::cout);
+	//}
 
-		per.time(std::cout);
-	}
-
-
-	std::cout << std::endl << "dynamic array test: " << std::endl;
-	{
-		utility::performance_t per;
-
-		for (volatile auto i = 0; i != cnt; ++i)
-		{
-			std::string val2 = "abcdefghijklmnopqrstuvwxyz";
-			std::vector<char> val3(100, 'a');
-			std::vector<char> val4(100, 'b');
-			auto len = val2.size() + val3.size() + val4.size();
-
-
-			service::const_array_buffer_t send_buffer;
-			send_buffer << service::buffer(reinterpret_cast<const char *>(&len), sizeof(len))
-				<< service::buffer(val2)
-				<< service::buffer(reinterpret_cast<const char *>(val3.data()), val3.size())
-				<< service::buffer(reinterpret_cast<const char *>(val4.data()), val4.size());
-
-			cli.async_send(send_buffer, [](){});
-		}
-
-		per.time(std::cout);
-	}
 
 	std::cout << std::endl << "serialize to array test: " << std::endl;
 	{
 		utility::performance_t per;
 
-		for (volatile auto i = 0; i != cnt; ++i)
+		for( volatile auto i = 0; i != cnt; ++i )
 		{
 			std::string val2 = "abcdefghijklmnopqrstuvwxyz";
 			std::vector<char> val3(100, 'a');
-			std::vector<char> val4(100, 'b');
-			auto len = sizeof(int) + val2.size() + sizeof(int) + val3.size() + sizeof(int) + val4.size();
+			std::vector<std::string> val4(100, val2);
+			auto len = 2 * sizeof(std::uint32_t) + val2.size() + sizeof(int) + val3.size() + sizeof(int) + 3000;
 
 
-			std::shared_ptr<char> buffer((char *) ::operator new(len + 4), [](char *p){::operator delete(p); });
+			std::shared_ptr<char> buffer((char *) ::operator new(len + 4), [](char *p)
+			{::operator delete(p); });
 			serialize::mem_serialize os(buffer.get(), len + 4);
 
-			os << len << val2 << val3 << val4;
+			os << len << len << val2 << val3 << val4;
 
-			cli.async_send(buffer.get(), os.in_length(), [](){});
+			cli.async_send(buffer.get(), os.in_length(), [buffer]()
+			{});
 		}
 
 		per.time(std::cout);

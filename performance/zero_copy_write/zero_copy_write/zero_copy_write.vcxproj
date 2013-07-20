@@ -109,6 +109,7 @@
     <ClInclude Include="..\..\..\include\async_io\timer\impl\timer_impl.hpp" />
     <ClInclude Include="..\..\..\include\async_io\timer\impl\timer_service.hpp" />
     <ClInclude Include="..\..\..\include\win32\debug\stack_walker.hpp" />
+    <ClInclude Include="arg_helper.hpp" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>

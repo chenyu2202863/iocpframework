@@ -11,7 +11,8 @@
 #include <stack>
 #include <queue>
 #include <deque>
-
+#include <unordered_map>
+#include <unordered_set>
 
 namespace serialize
 {
@@ -27,6 +28,12 @@ namespace serialize
 		struct is_container_t
 		{
 			static const bool value = false;
+		};
+
+		template < typename KeyT, typename ValueT >
+		struct is_container_t< std::pair<KeyT, ValueT> >
+		{
+			static const bool value = true;
 		};
 
 		template < typename T, typename AllocatorT >
@@ -60,6 +67,18 @@ namespace serialize
 		};
 
 		template < typename KeyT, typename ValueT, typename LessT, typename AllocatorT >
+		struct is_container_t< std::unordered_map<KeyT, ValueT, LessT, AllocatorT> >
+		{
+			static const bool value = true;
+		};
+
+		template < typename KeyT, typename LessT, typename AllocatorT >
+		struct is_container_t< std::unordered_set<KeyT, LessT, AllocatorT> >
+		{
+			static const bool value = true;
+		};
+
+		template < typename KeyT, typename ValueT, typename LessT, typename AllocatorT >
 		struct is_container_t< std::multimap<KeyT, ValueT, LessT, AllocatorT> >
 		{
 			static const bool value = true;
@@ -67,6 +86,18 @@ namespace serialize
 
 		template < typename KeyT, typename LessT, typename AllocatorT >
 		struct is_container_t< std::multiset<KeyT, LessT, AllocatorT> >
+		{
+			static const bool value = true;
+		};
+
+		template < typename KeyT, typename ValueT, typename LessT, typename AllocatorT >
+		struct is_container_t< std::unordered_multimap<KeyT, ValueT, LessT, AllocatorT> >
+		{
+			static const bool value = true;
+		};
+
+		template < typename KeyT, typename LessT, typename AllocatorT >
+		struct is_container_t< std::unordered_multiset<KeyT, LessT, AllocatorT> >
 		{
 			static const bool value = true;
 		};
@@ -161,7 +192,7 @@ namespace serialize
 					mapped_type value;
 					container_traits_t<mapped_type>::pop(io, value);
 
-					val.insert(std::make_pair(key, value));
+					val.insert(std::move(std::make_pair(key, value)));
 				}
 			}
 		};
@@ -172,7 +203,7 @@ namespace serialize
 		// -----------------------------------------------------------------
 		// class sequence_traits_t
 
-		template< typename SequenceTypeT >
+		template< typename SequenceTypeT, typename EnableT = void >
 		class sequence_traits_t
 		{
 		public:
@@ -195,17 +226,45 @@ namespace serialize
 			template < typename CharT, typename OutT >
 			static void pop(serialize_t<CharT, OutT> &io, SequenceTypeT& val)
 			{
-				size_type valSize = 0;
-				container_traits_t<size_type>::pop(io, valSize);
+				size_type val_size = 0;
+				container_traits_t<size_type>::pop(io, val_size);
+				val.reserve(val_size);
 
-
-				for(; valSize > 0; --valSize)
+				for(; val_size > 0; --val_size)
 				{
 					value_type element;
 					container_traits_t<value_type>::pop(io, element);
 
-					val.push_back(element);
+					val.emplace_back(std::move(element));
 				}
+			}
+		};
+
+		template< typename T, typename AllocatorT >
+		class sequence_traits_t<std::vector<T, AllocatorT>, typename std::enable_if<std::is_pod<T>::value>::type>
+		{
+		public:
+			typedef std::vector<T, AllocatorT>		vector_t;
+			typedef typename vector_t::size_type	size_type;
+			typedef typename vector_t::value_type	value_type;
+
+		public:
+			template < typename CharT, typename OutT >
+			static void push(serialize_t<CharT, OutT> &io, const vector_t &val)
+			{
+				container_traits_t<size_type>::push(io, val.size());
+				
+				io.push_pointer(val.data(), val.size() * sizeof(T));
+			}
+
+			template < typename CharT, typename OutT >
+			static void pop(serialize_t<CharT, OutT> &io, vector_t& val)
+			{
+				size_type val_size = 0;
+				container_traits_t<size_type>::pop(io, val_size);
+
+				val.resize(val_size);
+				io.pop_pointer(val.data(), val.size() * sizeof(T));
 			}
 		};
 

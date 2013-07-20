@@ -186,7 +186,6 @@ namespace async { namespace network {
 
 	server::~server()
 	{
-
 	}
 
 	bool server::start()
@@ -201,6 +200,7 @@ namespace async { namespace network {
 		{
 			::QueueUserAPC(APCFunc, impl_->thread_->native_handle(), 0);
 			impl_->thread_->join();
+			impl_->thread_.reset();
 		}
 
 		impl_->io_.stop();
@@ -316,57 +316,22 @@ namespace async { namespace network {
 			io_.post(std::bind(&tcp::socket::close, std::ref(socket_)));
 	}
 
+	// read & write no exception safe
 
-	std::uint32_t client::send(const char *buf, std::uint32_t len)
+	bool client::send(const char *buf, std::uint32_t len)
 	{
-		try
+		return _run_impl([&]()
 		{
-			return service::write(socket_, service::buffer(buf, len));
-		}
-		catch(exception::exception_base &e)
-		{
-			e.dump();
-
-			if( error_handle_ )
-				error_handle_(std::string(e.what()));
-
-			disconnect();
-			return 0;
-		}
-		catch(std::exception &e)
-		{
-			if( error_handle_ )
-				error_handle_(std::string(e.what()));
-
-			disconnect();
-			return 0;
-		}
+			service::write(socket_, service::buffer(buf, len));
+		});
 	}
 
-	std::uint32_t client::recv(char *buf, std::uint32_t len)
+	bool client::recv(char *buf, std::uint32_t len)
 	{
-		try
+		return _run_impl([&]()
 		{
-			return service::read(socket_, service::buffer(buf, len));
-		}
-		catch(exception::exception_base &e)
-		{
-			e.dump();
-
-			if( error_handle_ )
-				error_handle_(std::string(e.what()));
-
-			disconnect();
-			return 0;
-		}
-		catch(std::exception &e)
-		{
-			if( error_handle_ )
-				error_handle_(std::string(e.what()));
-
-			disconnect();
-			return 0;
-		}
+			service::read(socket_, service::buffer(buf, len));
+		});
 	}
 
 	void client::disconnect()
@@ -410,6 +375,8 @@ namespace async { namespace network {
 			assert(0 && "has an exception in connect_handler_");
 		}
 	}
+
+	
 
 }
 }

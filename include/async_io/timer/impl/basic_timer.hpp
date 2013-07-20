@@ -41,6 +41,10 @@ namespace async { namespace timer {
 		basic_timer_t &operator=(const basic_timer_t &);
 
 	public:
+		explicit operator bool() const
+		{
+			return id_ != 0;
+		}
 		// 设置时间间隔
 		// period 时间间隔
 		// delay 延迟时间

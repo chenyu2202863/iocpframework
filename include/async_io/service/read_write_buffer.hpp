@@ -210,8 +210,7 @@ namespace async { namespace service {
 		{}
 
 		const_array_buffer_t(const_array_buffer_t &&rhs)
-			: storage_(std::move(rhs.storage_))
-			, alloc_(&storage_)
+			: alloc_(&storage_)
 			, buffers_(rhs.buffers_, alloc_)
 			, buffer_cnt_(rhs.buffer_cnt_)
 			, buffer_size_(rhs.buffer_size_)

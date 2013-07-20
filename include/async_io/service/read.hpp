@@ -143,7 +143,7 @@ namespace async { namespace service {
 							stream_.async_read(mutable_buf, std::move(this_val));
 							return;
 						}
-						catch(exception::exception_base &e)
+						catch(::exception::exception_base &e)
 						{
 							const_cast<std::error_code &>(error) = e.code();
 							e.dump();

@@ -28,6 +28,7 @@ namespace stdex { namespace allocator {
 			: pos_(rhs.pos_)
 		{
 			std::memmove(&array_[0], &rhs.array_[0], pos_);
+			rhs.pos_ = 0;
 		}
 
 	private:
