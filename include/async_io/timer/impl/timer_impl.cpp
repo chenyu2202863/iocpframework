@@ -22,12 +22,12 @@ namespace async { namespace timer {
 	}
 
 
-	void waitable_timer_t::set_timer(long period, long delay)
+	void waitable_timer_t::set_timer(long period, long long delay)
 	{
 		assert(timer_ != NULL);
 
 		LARGE_INTEGER dueTime = {0};
-		dueTime.QuadPart = -(delay * 10000000);
+		dueTime.QuadPart = -(delay * 10000);
 
 		period_ = period;
 		due_ = delay;

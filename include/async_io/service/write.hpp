@@ -79,10 +79,10 @@ namespace async { namespace service {
 
 	namespace details
 	{
-		template<typename AsyncWriteStreamT, typename ConstBufferT, typename CompletionConditionT, typename HandlerT>
+		template<typename AsyncWriteStreamT, typename ConstBufferT, typename CompletionConditionT, typename HandlerT, typename AllocatorT>
 		class write_handler_t
 		{
-			typedef write_handler_t<AsyncWriteStreamT, ConstBufferT, CompletionConditionT, HandlerT> this_type;
+			typedef write_handler_t<AsyncWriteStreamT, ConstBufferT, CompletionConditionT, HandlerT, AllocatorT> this_type;
 
 		public:
 			AsyncWriteStreamT &stream_;
@@ -91,15 +91,17 @@ namespace async { namespace service {
 			std::uint32_t transfers_;
 			const std::uint32_t total_;
 			HandlerT handler_;
+			AllocatorT allocator_;
 
 		public:
-			write_handler_t(AsyncWriteStreamT &stream, ConstBufferT &&buffer, std::uint32_t total, const CompletionConditionT &condition, std::uint32_t transfer, HandlerT &&handler)
+			write_handler_t(AsyncWriteStreamT &stream, const ConstBufferT &buffer, std::uint32_t total, const CompletionConditionT &condition, std::uint32_t transfer, HandlerT &&handler, const AllocatorT &allocator)
 				: stream_(stream)
-				, buffer_(std::move(buffer))
+				, buffer_(buffer)
 				, condition_(condition)
 				, transfers_(transfer)
 				, total_(total)
 				, handler_(std::move(handler))
+				, allocator_(allocator)
 			{}
 
 			write_handler_t(write_handler_t &&rhs)
@@ -109,6 +111,7 @@ namespace async { namespace service {
 				, transfers_(rhs.transfers_)
 				, total_(rhs.total_)
 				, handler_(std::move(rhs.handler_))
+				, allocator_(std::move(rhs.allocator_))
 			{
 
 			}
@@ -139,8 +142,8 @@ namespace async { namespace service {
 						try
 						{
 							ConstBufferT const_buf = buffer((buffer_ + transfers_).data(), write_len);
-							this_type this_val(stream_, std::move(buffer_), total_, condition_, transfers_, std::move(handler_));
-							stream_.async_write(const_buf, std::move(this_val));
+							this_type this_val(stream_, buffer_, total_, condition_, transfers_, std::move(handler_), allocator_);
+							stream_.async_write(const_buf, std::move(this_val), allocator_);
 							return;
 						}
 						catch(::exception::exception_base &e)
@@ -153,16 +156,6 @@ namespace async { namespace service {
 
 				// 回调
 				handler_(error, transfers_);
-			}
-
-			friend void *allocate_handler(std::uint32_t sz, this_type *this_handler)
-			{
-				return service::allocate_handler(sz, this_handler->handler_);
-			}
-
-			friend void deallocate_handler(void *p, std::uint32_t sz, this_type *this_handler)
-			{
-				service::deallocate_handler(p, sz, this_handler->handler_);
 			}
 		};
 
@@ -223,34 +216,34 @@ namespace async { namespace service {
 	// 异步写入指定的数据
 
 	//
-	template<typename SyncWriteStreamT, typename ConstBufferT, typename HandlerT>
-	void async_write(SyncWriteStreamT &s, ConstBufferT &&buffer, const HandlerT &handler)
+	template<typename SyncWriteStreamT, typename ConstBufferT, typename HandlerT, typename AllocatorT>
+	void async_write(SyncWriteStreamT &s, const ConstBufferT &buffer, const HandlerT &handler, const AllocatorT &allocator)
 	{
-		async_write(s, std::forward<ConstBufferT>(buffer), transfer_all(), handler);
+		async_write(s, std::forward<ConstBufferT>(buffer), transfer_all(), handler, allocator);
 	}
 
-	template<typename SyncWriteStreamT, typename ConstBufferT, typename HandlerT>
-	void async_write(SyncWriteStreamT &s, ConstBufferT &&buffer, const std::uint64_t &offset, const HandlerT &handler)
+	template<typename SyncWriteStreamT, typename ConstBufferT, typename HandlerT, typename AllocatorT>
+	void async_write(SyncWriteStreamT &s, const ConstBufferT &buffer, const std::uint64_t &offset, const HandlerT &handler, const AllocatorT &allocator)
 	{
-		async_write(s, std::forward<ConstBufferT>(buffer), offset, transfer_all(), handler);
+		async_write(s, std::forward<ConstBufferT>(buffer), offset, transfer_all(), handler, allocator);
 	}
 
 	// 
-	template<typename SyncWriteStreamT, typename ConstBufferT, typename ComplateConditionT, typename HandlerT>
-	void async_write(SyncWriteStreamT &s, ConstBufferT &&buf, const ComplateConditionT &condition, HandlerT &&handler)
+	template<typename SyncWriteStreamT, typename ConstBufferT, typename ComplateConditionT, typename HandlerT, typename AllocatorT>
+	void async_write(SyncWriteStreamT &s, const ConstBufferT &buf, const ComplateConditionT &condition, HandlerT &&handler, const AllocatorT &allocator)
 	{
-		typedef details::write_handler_t<SyncWriteStreamT, ConstBufferT, ComplateConditionT, HandlerT> HookWriteHandler;
+		typedef details::write_handler_t<SyncWriteStreamT, ConstBufferT, ComplateConditionT, HandlerT, AllocatorT> HookWriteHandler;
 
-		HookWriteHandler hook_handler(s, std::forward<ConstBufferT>(buf), buf.size(), condition, 0, std::forward<HandlerT>(handler));
-		s.async_write(hook_handler.buffer_, std::forward<HookWriteHandler>(hook_handler));
+		HookWriteHandler hook_handler(s, buf, buf.size(), condition, 0, std::forward<HandlerT>(handler), allocator);
+		s.async_write(hook_handler.buffer_, std::move(hook_handler), allocator);
 	}
 
 	template<typename SyncWriteStreamT, typename ConstBufferT, typename ComplateConditionT, typename HandlerT>
-	void async_write(SyncWriteStreamT &s, ConstBufferT &&buffer, const std::uint64_t &offset, const ComplateConditionT &condition, HandlerT &&handler)
+	void async_write(SyncWriteStreamT &s, const ConstBufferT &buffer, const std::uint64_t &offset, const ComplateConditionT &condition, HandlerT &&handler)
 	{
 		typedef details::write_offset_handler_t<SyncWriteStreamT, ConstBufferT, ComplateConditionT, HandlerT> HookWriteHandler;
 
-		s.async_write(buffer, offset, HookWriteHandler(s, std::forward<ConstBufferT>(buffer), buffer.size(), offset, condition, 0, std::forward<HandlerT>(handler)));
+		s.async_write(buffer, offset, HookWriteHandler(s, buffer, buffer.size(), offset, condition, 0, std::forward<HandlerT>(handler)));
 	}
 
 }

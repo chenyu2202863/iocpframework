@@ -78,10 +78,10 @@ namespace async { namespace service {
 
 	namespace details
 	{
-		template< typename AsyncWriteStreamT, typename MutableBufferT, typename CompletionConditionT, typename HandlerT >
+		template< typename AsyncWriteStreamT, typename MutableBufferT, typename CompletionConditionT, typename HandlerT, typename AllocatorT >
 		class read_handler_t
 		{
-			typedef read_handler_t<AsyncWriteStreamT, MutableBufferT, CompletionConditionT, HandlerT> this_type;
+			typedef read_handler_t<AsyncWriteStreamT, MutableBufferT, CompletionConditionT, HandlerT, AllocatorT> this_type;
 
 		public:
 			AsyncWriteStreamT &stream_;
@@ -90,15 +90,17 @@ namespace async { namespace service {
 			std::uint32_t transfers_;
 			const std::uint32_t total_;
 			HandlerT handler_;
+			AllocatorT allocator_;
 
 		public:
-			read_handler_t(AsyncWriteStreamT &stream, MutableBufferT &&buffer, std::uint32_t total, const CompletionConditionT &condition, std::uint32_t transfer, HandlerT &&handler)
+			read_handler_t(AsyncWriteStreamT &stream, MutableBufferT &buffer, std::uint32_t total, const CompletionConditionT &condition, std::uint32_t transfer, HandlerT &&handler, const AllocatorT &allocator)
 				: stream_(stream)
-				, buffer_(std::move(buffer))
+				, buffer_(buffer)
 				, condition_(condition)
 				, transfers_(transfer)
 				, total_(total)
 				, handler_(std::move(handler))
+				, allocator_(allocator)
 			{}
 
 			read_handler_t(read_handler_t &&rhs)
@@ -108,6 +110,7 @@ namespace async { namespace service {
 				, transfers_(rhs.transfers_)
 				, total_(rhs.total_)
 				, handler_(std::move(rhs.handler_))
+				, allocator_(std::move(rhs.allocator_))
 			{
 			}
 
@@ -139,8 +142,8 @@ namespace async { namespace service {
 						try
 						{
 							MutableBufferT mutable_buf = buffer((buffer_ + transfers_).data(), read_len);
-							this_type this_val(stream_, std::move(buffer_), total_, condition_, transfers_, std::move(handler_));
-							stream_.async_read(mutable_buf, std::move(this_val));
+							this_type this_val(stream_, buffer_, total_, condition_, transfers_, std::move(handler_), allocator_);
+							stream_.async_read(mutable_buf, std::move(this_val), allocator_);
 							return;
 						}
 						catch(::exception::exception_base &e)
@@ -152,17 +155,10 @@ namespace async { namespace service {
 				}
 
 				// 回调	
+				if( size == 0 )
+					transfers_ = 0;
+
 				handler_(error, transfers_);
-			}
-
-			friend void *allocate_handler(std::uint32_t sz, this_type *this_handler)
-			{
-				return service::allocate_handler(sz, this_handler->handler_);
-			}
-
-			friend void deallocate_handler(void *p, std::uint32_t sz, this_type *this_handler)
-			{
-				service::deallocate_handler(p, sz, this_handler->handler_);
 			}
 		};
 
@@ -181,7 +177,7 @@ namespace async { namespace service {
 			HandlerT handler_;
 
 		public:
-			read_offset_handler_t(AsyncWriteStreamT &stream, MutableBufferT &&buffer, std::uint32_t total, const OffsetT &offset, const CompletionConditionT &condition, std::uint32_t transfer, HandlerT &&handler)
+			read_offset_handler_t(AsyncWriteStreamT &stream, MutableBufferT &buffer, std::uint32_t total, const OffsetT &offset, const CompletionConditionT &condition, std::uint32_t transfer, HandlerT &&handler)
 				: stream_(stream)
 				, buffer_(std::move(buffer))
 				, condition_(condition)
@@ -217,46 +213,36 @@ namespace async { namespace service {
 				// 回调
 				handler_(error, transfers_);
 			}
-
-			friend void *allocate_handler(std::uint32_t sz, this_type *this_handler)
-			{
-				allocate_handler(sz, this_handler->handler_);
-			}
-
-			friend void deallocate_handler(void *p, std::uint32_t sz, this_type *this_handler)
-			{
-				deallocate_handler(p, sz, this_handler->handler_);
-			}
 		};
 	}
 
 	// 异步读取指定的数据
 
 	//
-	template<typename SyncWriteStreamT, typename MutableBufferT, typename HandlerT>
-	void async_read(SyncWriteStreamT &s, MutableBufferT &&buffer, const HandlerT &handler)
+	template<typename SyncWriteStreamT, typename MutableBufferT, typename HandlerT, typename AllocatorT >
+	void async_read(SyncWriteStreamT &s, MutableBufferT &buffer, const HandlerT &handler, const AllocatorT &allocator)
 	{
-		async_read(s, std::forward<MutableBufferT>(buffer), transfer_all(), handler);
+		async_read(s, std::forward<MutableBufferT>(buffer), transfer_all(), handler, allocator);
 	}
 
 	template<typename SyncWriteStreamT, typename MutableBufferT, typename HandlerT>
-	void async_read(SyncWriteStreamT &s, MutableBufferT &&buffer, const LARGE_INTEGER &offset, const HandlerT &handler)
+	void async_read(SyncWriteStreamT &s, MutableBufferT &buffer, const LARGE_INTEGER &offset, const HandlerT &handler)
 	{
 		async_read(s, std::forward<MutableBufferT>(buffer), offset, transfer_all(), handler);
 	}
 
 	// 
-	template<typename SyncWriteStreamT, typename MutableBufferT, typename ComplateConditionT, typename HandlerT>
-	void async_read(SyncWriteStreamT &s, MutableBufferT &&buf, const ComplateConditionT &condition, HandlerT &&handler)
+	template<typename SyncWriteStreamT, typename MutableBufferT, typename ComplateConditionT, typename HandlerT, typename AllocatorT >
+	void async_read(SyncWriteStreamT &s, MutableBufferT &buf, const ComplateConditionT &condition, HandlerT &&handler, const AllocatorT &allocator)
 	{
-		typedef details::read_handler_t<SyncWriteStreamT, MutableBufferT, ComplateConditionT, HandlerT> HookReadHandler;
+		typedef details::read_handler_t<SyncWriteStreamT, MutableBufferT, ComplateConditionT, HandlerT, AllocatorT> HookReadHandler;
 
-		HookReadHandler hook_handler(s, std::forward<MutableBufferT>(buf), buf.size(), condition, 0, std::forward<HandlerT>(handler));
-		s.async_read(hook_handler.buffer_, std::move(hook_handler));
+		HookReadHandler hook_handler(s, buf, buf.size(), condition, 0, std::forward<HandlerT>(handler), allocator);
+		s.async_read(hook_handler.buffer_, std::move(hook_handler), allocator);
 	}
 
 	template<typename SyncWriteStreamT, typename MutableBufferT, typename OffsetT, typename ComplateConditionT, typename HandlerT>
-	void async_read(SyncWriteStreamT &s, MutableBufferT &&buffer, const OffsetT &offset, const ComplateConditionT &condition, HandlerT &&handler)
+	void async_read(SyncWriteStreamT &s, MutableBufferT &buffer, const OffsetT &offset, const ComplateConditionT &condition, HandlerT &&handler)
 	{
 		typedef details::read_offset_handler_t<SyncWriteStreamT, MutableBufferT, OffsetT, ComplateConditionT, HandlerT> HookReadHandler;
 

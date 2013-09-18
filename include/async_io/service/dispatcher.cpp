@@ -3,6 +3,7 @@
 #include <vector>
 #include <thread>
 #include <type_traits>
+#include <algorithm>
 
 #include "iocp.hpp"
 #include "exception.hpp"

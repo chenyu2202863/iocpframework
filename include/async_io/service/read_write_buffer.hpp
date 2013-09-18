@@ -41,7 +41,7 @@ namespace async { namespace service {
 			, size_(size)
 		{}
 
-		mutable_buffer_t(mutable_buffer_t &&rhs)
+		mutable_buffer_t(const mutable_buffer_t &rhs)
 			: data_(rhs.data_)
 			, size_(rhs.size_)
 		{
@@ -52,9 +52,9 @@ namespace async { namespace service {
 
 		}
 
+
 	private:
-		mutable_buffer_t(const mutable_buffer_t &);
-		mutable_buffer_t &operator=(const mutable_buffer_t &);
+		mutable_buffer_t &operator=( const mutable_buffer_t & );
 
 	public:
 		pointer data()
@@ -209,6 +209,14 @@ namespace async { namespace service {
 		~const_array_buffer_t()
 		{}
 
+		const_array_buffer_t(const const_array_buffer_t &rhs)
+			: alloc_(&storage_)
+			, buffers_(rhs.buffers_, alloc_)
+			, buffer_cnt_(rhs.buffer_cnt_)
+			, buffer_size_(rhs.buffer_size_)
+		{
+		}
+
 		const_array_buffer_t(const_array_buffer_t &&rhs)
 			: alloc_(&storage_)
 			, buffers_(rhs.buffers_, alloc_)
@@ -218,7 +226,6 @@ namespace async { namespace service {
 		}
 
 	private:
-		const_array_buffer_t(const const_array_buffer_t &rhs);
 		const_array_buffer_t &operator=(const const_array_buffer_t &rhs);
 
 	public:

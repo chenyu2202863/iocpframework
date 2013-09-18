@@ -59,22 +59,7 @@ namespace async { namespace network {
 
 	void socket_provider::cancel_io(SOCKET socket)
 	{
-		if( FARPROC cancelFuncPtr = ::GetProcAddress(::GetModuleHandleA("KERNEL32"), "CancelIoEx") )
-		{
-			// 仅在Vista以后支持，可以从不同的线程来取消IO操作
-			typedef BOOL (__stdcall *CancelIOExPtr)(HANDLE, LPOVERLAPPED);
-			CancelIOExPtr cancelIOEx = reinterpret_cast<CancelIOExPtr>(cancelFuncPtr);
-
-			if( !cancelIOEx(reinterpret_cast<HANDLE>(socket), 0) )
-				throw service::win32_exception_t("CancelIOEx");
-		}
-		else
-		{
-			// 此处忽略了在同一线程的检查
-			// CancelIO只能在同一个线程中取消IO操作
-			if( !::CancelIo(reinterpret_cast<HANDLE>(socket)) )
-				throw service::win32_exception_t("CancelIo");
-		}
+		::CancelIoEx(reinterpret_cast<HANDLE>(socket), nullptr);
 	}
 }
 

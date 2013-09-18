@@ -8,8 +8,8 @@
 
 #include "../../service/dispatcher.hpp"
 #include "../../../exception/exception_base.hpp"
-
-
+#include "../../../extend_stl/allocator/container_allocator.hpp"
+#include "../../../memory_pool/sgi_memory_pool.hpp"
 
 namespace async {
 
@@ -144,14 +144,11 @@ namespace async {
 			{
 				std::function<void()> handler_;
 
-				template < typename T >
-				callback_handler_t(T && handler)
+				callback_handler_t(std::function<void()> && handler)
 					: handler_(std::move(handler))
 				{}
 				~callback_handler_t()
-				{
-
-				}
+				{}
 
 				callback_handler_t(callback_handler_t && rhs)
 					: handler_(std::move(rhs.handler_))
@@ -162,14 +159,17 @@ namespace async {
 					handler_();
 				}
 
+				callback_handler_t(const callback_handler_t &rhs)
+					: handler_(rhs.handler_)
+				{}
+
 			private:
-				callback_handler_t(const callback_handler_t &);
 				callback_handler_t &operator=(const callback_handler_t &);
 			};
 			typedef std::map<std::uint32_t, std::pair<timer_ptr, callback_handler_t>> timers_type;
 		
-			typedef std::recursive_mutex					Mutex;
-			typedef std::unique_lock<Mutex>					Lock;
+			typedef std::mutex					Mutex;
+			typedef std::unique_lock<Mutex>		Lock;
 
 		private:
 			timers_type timers_;								// Timers
@@ -234,14 +234,21 @@ namespace async {
 				auto iter = timers_.find(id);
 
 				if( iter != timers_.end() )
+				{
 					iter->second.set_timer(period, delay);
+				}
 			}
 
 			void erase_timer(std::uint32_t id)
 			{
 				{
 					Lock lock(mutex_);
-					timers_.erase(id);
+					auto iter = timers_.find(id);
+					if(iter != timers_.end())
+					{
+						iter->second.first->cancel();
+						timers_.erase(iter);
+					}
 				}
 
 				// 设置更新事件信号
@@ -261,48 +268,41 @@ namespace async {
 			{
 				std::vector<HANDLE> handles;
 
+				typedef memory_pool::sgi_memory_pool_t<true, 256> pool_t;
+				pool_t pool;
+				typedef stdex::allocator::pool_allocator_t<char, pool_t> pool_allocator_t;
+				pool_allocator_t pool_allocator(pool);
+
+				handles.push_back(update_);
+
 				while(true)
 				{
-					// 如果有变化，则重置
-					if( WAIT_OBJECT_0 == ::WaitForSingleObject(update_, 0) )
-					{
-						_Copy(handles);
-					}
-
-					// 防止刚启动时没有timer生成
-					if( handles.size() == 0 )
-					{
-						if( WAIT_IO_COMPLETION == ::WaitForSingleObjectEx(update_, INFINITE, TRUE) )
-							break;
-						else
-						{
-							_Copy(handles);
-						}
-					}
-
-					// 等待Timer到点
-					if( handles.empty() )
-						continue;
-
 					DWORD res = ::WaitForMultipleObjectsEx(handles.size(), &handles[0], FALSE, INFINITE, TRUE);
 					if( res == WAIT_IO_COMPLETION )
 						break;
 					else if( res == WAIT_FAILED )
 					{
-						//assert(0);
-						update_.set_event();
+						assert(0);
+						continue;
+					}
+					else if( res == WAIT_OBJECT_0 )
+					{
+						_Copy(handles);
 						continue;
 					}
 					else if( res + WAIT_OBJECT_0 > timers_.size() )
-						throw ::exception::exception_base(std::make_error_code(std::errc::result_out_of_range), "handle out of range");
+					{
+						continue;
+					}
+					
 
 					Lock lock(mutex_);
 					auto iter = timers_.find((std::uint32_t)handles[res]);
 					if( iter != timers_.end() )
 					{
-						auto &callback = iter->second.second;
+						auto callback = iter->second.second;
 						lock.unlock();
-						io_.post(callback);
+						io_.post(std::move(callback), pool_allocator);
 					}
 				}
 
@@ -312,6 +312,7 @@ namespace async {
 			void _Copy(std::vector<HANDLE> &handles)
 			{
 				handles.clear();
+				handles.push_back(update_);
 
 				Lock lock(mutex_);
 				for(auto iter = timers_.begin(); iter != timers_.end(); ++iter)

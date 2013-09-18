@@ -103,31 +103,25 @@ namespace async { namespace network {
 		// 异步调用接口
 	public:
 		// szOutSize指定额外的缓冲区大小，以用来Accept远程连接后且收到第一块数据包才返回
-		template < typename HandlerT >
-		void async_accept(socket_handle_t &&remote_sck, HandlerT &&callback);
+		template < typename HandlerT, typename AllocatorT >
+		void async_accept(std::shared_ptr<socket_handle_t> &&remote_sck, HandlerT &&callback, const AllocatorT &allocator);
 		// 异步连接需要先绑定端口
-		template < typename HandlerT >
-		void async_connect(const ip_address &addr, std::uint16_t uPort, HandlerT &&callback);
+		template < typename HandlerT, typename AllocatorT >
+		void async_connect(const ip_address &addr, std::uint16_t uPort, HandlerT &&callback, const AllocatorT &allocator);
 
 		// 异步断开连接
-		template < typename HandlerT >
-		void async_disconnect(bool is_reuse, HandlerT &&callback);
+		template < typename HandlerT, typename AllocatorT >
+		void async_disconnect(bool is_reuse, HandlerT &&callback, const AllocatorT &allocator);
 
 		// 异步TCP读取
-		template < typename HandlerT >
-		void async_read(service::mutable_buffer_t &buf, HandlerT &&callback);
+		template < typename HandlerT, typename AllocatorT >
+		void async_read(service::mutable_buffer_t &buf, HandlerT &&callback, const AllocatorT &allocator);
 		
 		// 异步TCP写入
-		template < typename HandlerT >
-		void async_write(const service::const_buffer_t &buf, HandlerT &&callback);
-		template < typename HandlerT >
-		void async_write(const service::const_array_buffer_t &buf, HandlerT &&callback);
-		template < typename ParamT >
-		void async_write(ParamT &&param, 
-			typename std::enable_if<ParamT::is_static_param_t::value>::type * = nullptr);
-		template < typename ParamT >
-		void async_write(ParamT &&param, 
-			typename std::enable_if<!ParamT::is_static_param_t::value>::type * = nullptr);
+		template < typename HandlerT, typename AllocatorT >
+		void async_write(const service::const_buffer_t &buf, HandlerT &&callback, const AllocatorT &allocator);
+		template < typename HandlerT, typename AllocatorT >
+		void async_write(const service::const_array_buffer_t &buf, HandlerT &&callback, const AllocatorT &allocator);
 
 		// 异步UDP读取
 		template < typename HandlerT >
@@ -154,7 +148,6 @@ namespace async { namespace network {
 	{
 		return socket_ != INVALID_SOCKET;
 	}
-
 
 	template< typename IOCtrlT >
 	inline bool socket_handle_t::io_control(IOCtrlT &ioCtrl)
@@ -195,17 +188,17 @@ namespace async { namespace network {
 			return false;
 	}
 
-	template < typename HandlerT >
-	void socket_handle_t::async_accept(socket_handle_t &&remote_sck, HandlerT &&callback)
+	template < typename HandlerT, typename AllocatorT >
+	void socket_handle_t::async_accept(std::shared_ptr<socket_handle_t> &&remote_sck, HandlerT &&callback, const AllocatorT &allocator)
 	{
 		if( !is_open() ) 
 			throw service::network_exception("Socket not open");
 
-		native_handle_type sck = remote_sck.native_handle();
+		native_handle_type sck = *remote_sck;
 
 		typedef details::accept_handle_t<HandlerT> HookAcceptor;
 		HookAcceptor accept_hook(*this, std::move(remote_sck), std::forward<HandlerT>(callback));
-		auto p = service::make_async_callback(std::move(accept_hook));
+		auto p = service::make_async_callback(std::move(accept_hook), allocator);
 		service::async_callback_base_ptr async_result(p);
 
 		// 根据szOutSide大小判断，是否需要接收远程客户机第一块数据才返回。
@@ -220,8 +213,8 @@ namespace async { namespace network {
 	}
 
 	// 异步连接服务
-	template < typename HandlerT >
-	void socket_handle_t::async_connect(const ip_address &addr, u_short uPort, HandlerT &&callback)
+	template < typename HandlerT, typename AllocatorT >
+	void socket_handle_t::async_connect(const ip_address &addr, u_short uPort, HandlerT &&callback, const AllocatorT &allocator)
 	{
 		if( !is_open() )
 			throw service::network_exception("Socket not open");
@@ -241,7 +234,7 @@ namespace async { namespace network {
 
 		typedef detail::connect_handle_t<HandlerT> HookConnect;
 		HookConnect connect_hook(*this, std::forward<HandlerT>(callback));
-		service::async_callback_base_ptr async_result(service::make_async_callback(std::move(connect_hook)));
+		service::async_callback_base_ptr async_result(service::make_async_callback(std::move(connect_hook), allocator));
 
 		if( !socket_provider::singleton().ConnectEx(socket_, reinterpret_cast<SOCKADDR *>(&remoteAddr), sizeof(SOCKADDR), 0, 0, 0, async_result.get()) 
 			&& ::WSAGetLastError() != WSA_IO_PENDING )
@@ -252,8 +245,8 @@ namespace async { namespace network {
 
 
 	// 异步接接收数据
-	template < typename HandlerT >
-	void socket_handle_t::async_read(service::mutable_buffer_t &buf, HandlerT &&callback)
+	template < typename HandlerT, typename AllocatorT >
+	void socket_handle_t::async_read(service::mutable_buffer_t &buf, HandlerT &&callback, const AllocatorT &allocator)
 	{
 		WSABUF wsabuf = {0};
 		wsabuf.buf = buf.data();
@@ -262,21 +255,21 @@ namespace async { namespace network {
 		DWORD dwFlag = 0;
 		DWORD dwSize = 0;
 
-		service::async_callback_base_ptr asynResult(service::make_async_callback(std::forward<HandlerT>(callback)));
+		service::async_callback_base_ptr asynResult(service::make_async_callback(std::forward<HandlerT>(callback), allocator));
 
 		int ret = ::WSARecv(socket_, &wsabuf, 1, &dwSize, &dwFlag, asynResult.get(), NULL);
 		if( 0 != ret
 			&& ::WSAGetLastError() != WSA_IO_PENDING )
 			throw service::win32_exception_t("WSARecv");
-		//else if( ret == 0 )
-		//	asynResult->invoke(std::make_error_code((std::errc::errc)::WSAGetLastError()), dwSize);
+		else if( ret == 0 )
+			asynResult->invoke(std::make_error_code((std::errc)::WSAGetLastError()), dwSize);
 		else
 			asynResult.release();
 	}
 
 	// 异步发送数据
-	template < typename HandlerT >
-	void socket_handle_t::async_write(const service::const_buffer_t &buf, HandlerT &&callback)
+	template < typename HandlerT, typename AllocatorT >
+	void socket_handle_t::async_write(const service::const_buffer_t &buf, HandlerT &&callback, const AllocatorT &allocator)
 	{
 		WSABUF wsabuf = {0};
 		wsabuf.buf = const_cast<char *>(buf.data());
@@ -285,76 +278,33 @@ namespace async { namespace network {
 		DWORD dwFlag = 0;
 		DWORD dwSize = 0;
 
-		service::async_callback_base_ptr asynResult(service::make_async_callback(std::forward<HandlerT>(callback)));
+		service::async_callback_base_ptr asynResult(service::make_async_callback(std::forward<HandlerT>(callback), allocator));
 
 		int ret = ::WSASend(socket_, &wsabuf, 1, &dwSize, dwFlag, asynResult.get(), NULL);
 		if( 0 != ret
 			&& ::WSAGetLastError() != WSA_IO_PENDING )
 			throw service::win32_exception_t("WSASend");
-		//else if( ret == 0 )
-		//	asynResult->invoke(std::make_error_code((std::errc::errc)::WSAGetLastError()), dwSize);
+		else if( ret == 0 )
+			asynResult->invoke(std::make_error_code((std::errc)::WSAGetLastError()), dwSize);
 		else
 			asynResult.release();
 	}
 
-	template < typename HandlerT >
-	void socket_handle_t::async_write(const service::const_array_buffer_t &buf, HandlerT &&callback)
+	template < typename HandlerT, typename AllocatorT >
+	void socket_handle_t::async_write(const service::const_array_buffer_t &buf, HandlerT &&callback, const AllocatorT &allocator)
 	{
-		auto async_callback_val = service::make_async_callback(std::forward<HandlerT>(callback));
+		auto async_callback_val = service::make_async_callback(std::forward<HandlerT>(callback), allocator);
 		service::async_callback_base_ptr asynResult(async_callback_val);
 
 		_async_write_impl(buf, asynResult);
 	}
 
-	template < typename ParamT >
-	void socket_handle_t::async_write(ParamT &&param, 
-		typename std::enable_if<ParamT::is_static_param_t::value>::type * /* = nullptr*/)
-	{
-		typedef ParamT param_t;
-		auto async_callback_val = service::make_async_callback(std::forward<param_t>(param));
-		service::async_callback_base_ptr asynResult(async_callback_val);
-
-		auto buffer = async_callback_val->handler_.buffers();
-		typedef decltype(buffer) buffer_t;
-		WSABUF wsa_buffers[param_t::PARAM_SIZE] = {0};
-
-		for(std::uint32_t i = 0; i != buffer.size(); ++i)
-		{
-			wsa_buffers[i].buf = const_cast<char *>(buffer[i].data());
-			wsa_buffers[i].len = buffer[i].size();
-		}
-
-		DWORD dwFlag = 0;
-		DWORD dwSize = 0;
-		
-		int ret = ::WSASend(socket_, &wsa_buffers[0], param_t::PARAM_SIZE, &dwSize, dwFlag, asynResult.get(), NULL);
-		if( 0 != ret
-			&& ::WSAGetLastError() != WSA_IO_PENDING )
-			throw service::win32_exception_t("WSASend");
-		//else if( ret == 0 )
-		//	asynResult->invoke(std::make_error_code((std::errc::errc)::WSAGetLastError()), dwSize);
-		else
-			asynResult.release();
-	}
-
-
-	template < typename ParamT >
-	void socket_handle_t::async_write(ParamT &&param, 
-		typename std::enable_if<!ParamT::is_static_param_t::value>::type * /* = nullptr*/)
-	{
-		typedef ParamT param_t;
-		
-		auto async_callback_val = service::make_async_callback(std::forward<param_t>(param));
-		service::async_callback_base_ptr asynResult(async_callback_val);
-
-		_async_write_impl(async_callback_val->handler_.buffers(), asynResult);
-	}
 
 	// 异步关闭连接
-	template < typename HandlerT >
-	void socket_handle_t::async_disconnect(bool is_reuse, HandlerT &&callback)
+	template < typename HandlerT, typename AllocatorT >
+	void socket_handle_t::async_disconnect(bool is_reuse, HandlerT &&callback, const AllocatorT &allocator)
 	{
-		service::async_callback_base_ptr asynResult(service::make_async_callback(std::forward<HandlerT>(callback)));
+		service::async_callback_base_ptr asynResult(service::make_async_callback(std::forward<HandlerT>(callback), allocator));
 
 		DWORD dwFlags = is_reuse ? TF_REUSE_SOCKET : 0;
 
@@ -384,8 +334,8 @@ namespace async { namespace network {
 		if( 0 != ret
 			&& ::WSAGetLastError() != WSA_IO_PENDING )
 			throw service::win32_exception_t("WSASendTo");
-		//else if( ret == 0 )
-		//	asynResult->invoke(std::make_error_code((std::errc::errc)::WSAGetLastError()), dwSize);
+		else if( ret == 0 )
+			asynResult->invoke(std::make_error_code((std::errc)::WSAGetLastError()), dwSize);
 		else
 			asynResult.release();
 	}	
@@ -408,8 +358,8 @@ namespace async { namespace network {
 		if( 0 != ret
 			&& ::WSAGetLastError() != WSA_IO_PENDING )
 			throw service::win32_exception_t("WSARecvFrom");
-		//else if( ret == 0 )
-		//	asynResult->invoke(std::make_error_code((std::errc::errc)::WSAGetLastError()), dwSize);
+		else if( ret == 0 )
+			asynResult->invoke(std::make_error_code((std::errc)::WSAGetLastError()), dwSize);
 		else
 			asynResult.release();
 	}

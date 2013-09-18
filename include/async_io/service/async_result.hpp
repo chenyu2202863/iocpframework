@@ -33,24 +33,6 @@ namespace async { namespace service {
 
 	typedef std::unique_ptr< async_callback_base_t, async_result_deallocate_t > async_callback_base_ptr;
 
-
-	template < typename HandlerT >
-	void *allocate_handler(std::uint32_t sz, HandlerT &handler);
-
-	template < typename HandlerT >
-	void deallocate_handler(void *p, std::uint32_t sz, HandlerT &handler);
-
-	inline void *allocate_handler(std::uint32_t sz, ...)
-	{
-		return ::operator new(sz);
-	}
-
-	inline void deallocate_handler(void *p, std::uint32_t /*sz*/, ...)
-	{
-		::operator delete(p);
-	}
-
-
 	//---------------------------------------------------------------------------
 	// struct async_callback_base
 
@@ -80,14 +62,17 @@ namespace async { namespace service {
 	}
 
 
-	template < typename HandlerT >
+	template < typename HandlerT, typename AllocatorT >
 	struct win_async_callback_t
 		: async_callback_base_t
 	{
+		typedef win_async_callback_t<HandlerT, AllocatorT> this_t;
 		HandlerT handler_;
+		AllocatorT allocator_;
 
-		explicit win_async_callback_t(HandlerT &&callback)
+		explicit win_async_callback_t(HandlerT &&callback, const AllocatorT &allocator)
 			: handler_(std::move(callback))
+			, allocator_(allocator)
 		{}
 
 		virtual ~win_async_callback_t()
@@ -100,17 +85,11 @@ namespace async { namespace service {
 
 		virtual void deallocate()
 		{
-			deallocate_handler(this, sizeof(*this), *this);
-		}
+			typedef typename AllocatorT::rebind<this_t>::other allocator_t;
+			allocator_t alloc = allocator_;
 
-		friend void *allocate_handler(std::uint32_t sz, win_async_callback_t<HandlerT> *this_handler)
-		{
-			allocate_handler(sz, this_handler->handler_);
-		}
-
-		friend void deallocate_handler(void *p, std::uint32_t sz, win_async_callback_t<HandlerT> *this_handler)
-		{
-			deallocate_handler(p, sz, this_handler->handler_);
+			alloc.destroy(this);
+			alloc.deallocate(this, 1);
 		}
 	};
 
@@ -120,26 +99,17 @@ namespace async { namespace service {
 		p->deallocate();
 	}
 
-
-	template < typename HandlerT >
-	void *allocate_handler(std::uint32_t sz, HandlerT &handler)
+	template < typename HandlerT, typename AllocatorT >
+	win_async_callback_t<HandlerT, AllocatorT> *make_async_callback(HandlerT &&handler, const AllocatorT &allocator)
 	{
-		return allocate_handler(sz, std::addressof(handler));
-	}
+		typedef win_async_callback_t<HandlerT, AllocatorT> async_callback_t;
 
-	template < typename HandlerT >
-	void deallocate_handler(void *p, std::uint32_t sz, HandlerT &handler)
-	{
-		deallocate_handler(p, sz, std::addressof(handler));
-	}
+		typedef typename AllocatorT::rebind<async_callback_t>::other allocator_t;
+		allocator_t alloc = allocator;
+		auto p = alloc.allocate(1);
+		alloc.construct(p, std::forward<HandlerT>(handler), allocator);
 
-	template < typename HandlerT >
-	win_async_callback_t<HandlerT> *make_async_callback(HandlerT &&handler)
-	{
-		typedef win_async_callback_t<HandlerT> async_callback_t;
-
-		void *p = allocate_handler(sizeof(async_callback_t), handler);
-		return ::new(p) async_callback_t(std::forward<HandlerT>(handler));
+		return p;
 	}
 }
 }

@@ -133,15 +133,15 @@ namespace async { namespace network {
 		}
 
 		// 异步发送数据
-		template < typename ConstBufferT, typename HandlerT >
-		void async_write(const ConstBufferT &buffer, HandlerT &&callback)
+		template < typename ConstBufferT, typename HandlerT, typename AllocatorT >
+		void async_write(const ConstBufferT &buffer, HandlerT &&callback, const AllocatorT &allocator)
 		{
-			return impl_.async_write(buffer, std::forward<HandlerT>(callback));
+			return impl_.async_write(buffer, std::forward<HandlerT>(callback), allocator);
 		}
-		template < typename ParamT >
-		void async_write(ParamT &&callback)
+		template < typename ParamT, typename AllocatorT >
+		void async_write(ParamT &&callback, const AllocatorT &allocator)
 		{
-			return impl_.async_write(std::forward<ParamT>(callback));
+			return impl_.async_write(std::forward<ParamT>(callback), allocator);
 		}
 
 		// 阻塞式接收数据直到成功或出错
@@ -158,10 +158,10 @@ namespace async { namespace network {
 
 
 		// 异步接收数据
-		template < typename MutableBufferT, typename HandlerT >
-		void async_read(MutableBufferT &buffer, HandlerT &&callback)
+		template < typename MutableBufferT, typename HandlerT, typename AllocatorT >
+		void async_read(MutableBufferT &buffer, HandlerT &&callback, const AllocatorT &allocator)
 		{
-			return impl_.async_read(buffer, std::forward<HandlerT>(callback));
+			return impl_.async_read(buffer, std::forward<HandlerT>(callback), allocator);
 		}
 
 	};

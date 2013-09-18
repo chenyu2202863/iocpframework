@@ -1,6 +1,16 @@
 #ifndef __TIMER_BASIC_TIMER_HPP
 #define __TIMER_BASIC_TIMER_HPP
 
+#include <chrono>
+#include <limits>
+
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
+#endif
 
 namespace async { namespace timer {
 
@@ -24,11 +34,17 @@ namespace async { namespace timer {
 
 		// 接受回调函数，且注册一个Timer
 		template < typename HandlerT >
-		basic_timer_t(timer_service_t &service, long period, long due, HandlerT &&handler)
+		basic_timer_t(timer_service_t &service, 
+					  const std::chrono::milliseconds &duration_time,
+					  const std::chrono::milliseconds &delay_time,
+					  HandlerT &&handler)
 			: service_(service)
 			, id_(0)
 		{
-			id_ = service_.add_timer(period, due, std::forward<HandlerT>(handler));
+			assert(duration_time.count() <= std::numeric_limits<long>::max());
+			assert(-(delay_time.count() * 10000) >= std::numeric_limits<long long>::min());
+
+			id_ = service_.add_timer(static_cast<long>(duration_time.count()), static_cast<long>(delay_time.count()), std::forward<HandlerT>(handler));
 		}
 		~basic_timer_t()
 		{
@@ -70,10 +86,32 @@ namespace async { namespace timer {
 		}
 
 		template < typename HandlerT >
-		void async_wait(HandlerT &&handler, long period, long delay = 0)
+		void async_wait(HandlerT &&handler, const std::chrono::milliseconds& duration_time, const std::chrono::milliseconds &delay_time = std::chrono::milliseconds(0))
+		{
+			assert(duration_time.count() <= std::numeric_limits<long>::max());
+			assert(-(delay_time.count() * 10000) >= std::numeric_limits<long long>::min());
+
+			if( id_ == 0 )
+			{
+				id_ = service_.add_timer(static_cast<long>(duration_time.count()), 
+					static_cast<long>(delay_time.count()), 
+					std::forward<HandlerT>(handler));
+			}
+
+			async_wait();
+		}
+
+		template < typename HandlerT, typename ClockT, typename DurationT >
+		void async_wait(HandlerT && handler, const std::chrono::milliseconds& duration_time, const std::chrono::time_point<ClockT, DurationT>& abs_time)
 		{
 			if( id_ == 0 )
-				id_ = service_.add_timer(period, delay, handler);
+			{
+				std::chrono::milliseconds real_time = std::chrono::duration_cast<std::chrono::milliseconds>(abs_time - ClockT::now());
+				
+				id_ = service_.add_timer(static_cast<long>(duration_time.count()),
+					static_cast<long>(real_time.count()), 
+					std::forward<HandlerT>(handler));
+			}
 
 			async_wait();
 		}

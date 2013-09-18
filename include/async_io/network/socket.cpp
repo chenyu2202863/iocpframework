@@ -77,8 +77,8 @@ namespace async { namespace network {
 		io_.bind(reinterpret_cast<HANDLE>(socket_));
 
 		// 
-		//if( !::SetFileCompletionNotificationModes(reinterpret_cast<HANDLE>(socket_), FILE_SKIP_COMPLETION_PORT_ON_SUCCESS) )
-		//	throw service::win32_exception_t("SetFileCompletionNotificationModes");
+		if( !::SetFileCompletionNotificationModes(reinterpret_cast<HANDLE>(socket_), FILE_SKIP_COMPLETION_PORT_ON_SUCCESS) )
+			throw service::win32_exception_t("SetFileCompletionNotificationModes");
 	}
 
 	void socket_handle_t::shutdown(int shut)
@@ -287,8 +287,8 @@ namespace async { namespace network {
 		if( 0 != ret
 			&& ::WSAGetLastError() != WSA_IO_PENDING )
 			throw service::win32_exception_t("WSASend");
-		//else if( ret == 0 )
-		//	asynResult->invoke(std::make_error_code((std::errc::errc)::WSAGetLastError()), dwSize);
+		else if( ret == 0 )
+			ptr->invoke(std::make_error_code((std::errc)::WSAGetLastError()), dwSize);
 		else
 			ptr.release();
 	}

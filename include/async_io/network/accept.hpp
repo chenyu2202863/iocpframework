@@ -24,12 +24,12 @@ namespace async {
 		struct accept_handle_t
 		{	
 			socket_handle_t &acceptor_;
-			socket_handle_t remote_sck_;
+			std::shared_ptr<socket_handle_t> remote_sck_;
 			HandlerT handler_;
 
 			char address_buffer_[2 * SOCKET_ADDR_SIZE];
 
-			accept_handle_t(socket_handle_t &acceptor, socket_handle_t &&remoteSocket, HandlerT &&handler)
+			accept_handle_t(socket_handle_t &acceptor, std::shared_ptr<socket_handle_t> &&remoteSocket, HandlerT &&handler)
 				: acceptor_(acceptor)
 				, remote_sck_(std::move(remoteSocket))
 				, handler_(std::move(handler))
@@ -55,7 +55,7 @@ namespace async {
 			{
 				// ¸´ÖÆListen socketÊôÐÔ
 				update_accept_context context(acceptor_);
-				remote_sck_.set_option(context);
+				remote_sck_->set_option(context);
 
 				handler_(error, remote_sck_);
 			}

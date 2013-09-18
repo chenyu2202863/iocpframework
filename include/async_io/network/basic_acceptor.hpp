@@ -100,10 +100,10 @@ namespace async { namespace network {
 			return impl_.accept();
 		}
 
-		template < typename HandlerT >
-		void async_accept(socket_handle_t &&sck, HandlerT &&callback)
+		template < typename HandlerT, typename AllocatorT >
+		void async_accept(std::shared_ptr<socket_handle_t> &&sck, HandlerT &&callback, const AllocatorT &allocator)
 		{
-			return impl_.async_accept(std::move(sck), std::forward<HandlerT>(callback));
+			return impl_.async_accept(std::move(sck), std::forward<HandlerT>(callback), allocator);
 		}
 	};
 }

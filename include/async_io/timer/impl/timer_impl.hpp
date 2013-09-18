@@ -16,7 +16,7 @@ namespace async { namespace timer {
 	private:
 		HANDLE timer_;
 		long period_;		// 间隔时间
-		long due_;			// 第一次后延长时间
+		long long due_;		// 延长时间
 
 	public:
 		waitable_timer_t(long period, long due, bool manualReset = false, const wchar_t *timerName = nullptr);
@@ -47,7 +47,7 @@ namespace async { namespace timer {
 		}
 
 	public:
-		void set_timer(long period, long delay);
+		void set_timer(long period, long long delay);
 
 		void cancel();
 

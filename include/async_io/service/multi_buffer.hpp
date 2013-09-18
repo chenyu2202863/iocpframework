@@ -14,77 +14,102 @@ namespace async { namespace service {
 	namespace details
 	{
 		template < typename T >
-		const_buffer_t translate_to_buffer(const T &val, 
-			typename std::enable_if<std::is_pod<T>::value>::type * = nullptr)
+		struct pod_param_t
 		{
-			return service::const_buffer_t(reinterpret_cast<const char *>(&val), sizeof(val));
+			T val_;
+
+			pod_param_t(T val)
+				: val_(val)
+			{}
+
+			pod_param_t(pod_param_t && rhs)
+				: val_(rhs.val_)
+			{}
+
+		private:
+			pod_param_t(const pod_param_t &);
+			pod_param_t &operator=( const pod_param_t & );
+		};
+
+		template < typename T >
+		struct no_pod_param_t
+		{
+			std::uint32_t size_;
+			T val_;
+
+			no_pod_param_t(T && val)
+				: val_(std::move(val))
+				, size_(0)
+			{}
+
+			no_pod_param_t(no_pod_param_t && rhs)
+				: val_(std::move(rhs.val_))
+				, size_(rhs.size_)
+			{}
+
+		private:
+			no_pod_param_t(const no_pod_param_t &);
+			no_pod_param_t &operator=( const no_pod_param_t & );
+		};
+
+		template < typename T >
+		pod_param_t<T> make_param(T && t, 
+								  typename std::enable_if<std::is_pod<T>::value>::type * = nullptr)
+		{
+			return pod_param_t<T>(t);
 		}
 
 		template < typename T >
-		const_array_buffer_t translate_to_buffer(const T &val, 
-			typename std::enable_if<!std::is_pod<T>::value>::type * = nullptr)
+		no_pod_param_t<T> make_param(T && t,
+								  typename std::enable_if<!std::is_pod<T>::value>::type * = nullptr)
 		{
-			return val.buffers();
+			return no_pod_param_t<T>(std::forward<T>(t));
 		}
 
-		template < typename CharT, typename CharTraits, typename AllocatorT >
-		const_array_buffer_t translate_to_buffer(const std::basic_string<CharT, CharTraits, AllocatorT> &val)
+
+		template < typename T >
+		struct buffer_traits_t
 		{
-			const_array_buffer_t array_buffer;
-			array_buffer << const_buffer_t(val.size(), )
-				<< const_buffer_t(val.data(), val.size());
-		}
+			static void buffer(const_array_buffer_t &buffers, const T &val)
+			{
+				val.buffer(buffers);
+			}
+		};
+
+		template < typename CharT, typename LessT, typename AllocatorT >
+		struct buffer_traits_t<std::basic_string<CharT, LessT, AllocatorT>>
+		{
+			static void buffer(const_array_buffer_t &buffers, const std::basic_string<CharT, LessT, AllocatorT> &val)
+			{
+				buffers << service::buffer(val);
+			}
+		};
 
 		template < typename T, typename AllocatorT >
-		const_array_buffer_t translate_to_buffer(const std::vector<T, AllocatorT> &val)
+		struct buffer_traits_t<std::vector<T, AllocatorT>>
 		{
-			static_assert(std::is_pod<T>::value, "T must be a pod type");
-			return service::const_buffer_t(val.data(), val.size() * sizeof(T));
+			static void buffer(const_array_buffer_t &buffers, const std::vector<T, AllocatorT> &val)
+			{
+				buffers << service::buffer(val);
+			}
+		};
+
+
+		template < typename T >
+		const_buffer_t translate_to_buffer(const pod_param_t<T> &val)
+		{
+			return buffer(reinterpret_cast<const char *>(&val.val_), sizeof(val.val_));;
 		}
 
-
-		template < std::uint32_t N >
-		struct static_tuple_buffer_t
+		template < typename T >
+		const_array_buffer_t translate_to_buffer(const no_pod_param_t<T> &val)
 		{
-			template < typename TupleT, typename ArrayT >
-			static void make(const TupleT &tuple_val, ArrayT &array_val)
-			{
-				array_val[N - 1] = translate_to_buffer(std::get<N - 1>(tuple_val));
-				static_tuple_buffer_t<N - 1>::make(tuple_val, array_val);
-			}
-		};
+			const_array_buffer_t array_buffer;
+			array_buffer << buffer(reinterpret_cast<const char *>(&val.size_), sizeof(val.size_));
+			buffer_traits_t<T>::buffer(buffer, val.val_);
 
-		template <>
-		struct static_tuple_buffer_t<1>
-		{
-			template < typename TupleT, typename ArrayT >
-			static void make(const TupleT &tuple_val, ArrayT &array_val)
-			{
-				array_val[0] = translate_to_buffer(std::get<0>(tuple_val));
-			}
-		};
-
-
-		template < std::uint32_t N >
-		struct dynamic_tuple_buffer_t
-		{
-			template < typename TupleT >
-			static void make(const TupleT &tuple_val, const_array_buffer_t &array_val)
-			{
-				array_val << std::move(translate_to_buffer(std::get<N - 1>(tuple_val)));
-				dynamic_tuple_buffer_t<N - 1>::make(tuple_val, array_val);
-			}
-		};
-
-		template <>
-		struct dynamic_tuple_buffer_t<1>
-		{
-			template < typename TupleT >
-			static void make(const TupleT &tuple_val, const_array_buffer_t &array_val)
-			{
-				array_val << std::move(translate_to_buffer(std::get<0>(tuple_val)));
-			}
-		};
+			return buffer;
+		}
 
 		
 		template < std::uint32_t I, std::uint32_t N, typename TupleT, typename BuffersT >
@@ -102,68 +127,20 @@ namespace async { namespace service {
 	}
 
 
-	template < typename HandlerT, typename ...Args >
-	struct static_param_holder_t
-		: HandlerT
-	{
-		typedef std::tuple<Args...>		tuple_t;
-		typedef HandlerT				handler_t;
-		typedef std::array<service::const_buffer_t, std::tuple_size<tuple_t>::value> buffers_t;
-		typedef std::true_type			is_static_param_t;
-
-		enum { PARAM_SIZE = std::tuple_size<tuple_t>::value };
-		tuple_t val_;
-
-		static_param_holder_t(HandlerT &&handler, Args &&...args)
-			: HandlerT(std::move(handler))
-			, val_(std::make_tuple(std::forward<Args>(args)...))
-		{}
-
-		static_param_holder_t(static_param_holder_t &&rhs)
-			: HandlerT(std::move(static_cast<HandlerT>(rhs)))
-			, val_(std::move(rhs.val_))
-		{}
-
-		buffers_t buffers() const
-		{
-			buffers_t buffer;
-
-			details::static_tuple_buffer_t<PARAM_SIZE>::make(val_, buffer);
-
-			return buffer;
-		}
-
-	private:
-		static_param_holder_t(const static_param_holder_t &);
-		static_param_holder_t &operator=(const static_param_holder_t &);
-	};
-
-	template < typename HandlerT, typename ...Args >
-	static_param_holder_t<HandlerT, Args...> make_static_param(HandlerT &&handler, Args &&...args)
-	{
-		return static_param_holder_t<HandlerT, Args...>(std::forward<HandlerT>(handler), std::forward<Args>(args)...);
-	}
-
-
-	template < typename HandlerT, typename ...Args >
+	template < typename HandlerT, typename TupleT >
 	struct dynamic_param_holder_t
 		: HandlerT
 	{
-		typedef std::tuple<Args...>		tuple_t;
+		typedef TupleT					tuple_t;
 		typedef HandlerT				handler_t;
 		typedef const_array_buffer_t	buffers_t;
 		typedef std::false_type			is_static_param_t;
 
 		tuple_t tuple_;
 
-		dynamic_param_holder_t(HandlerT &&handler, Args &&...args)
+		dynamic_param_holder_t(HandlerT &&handler, tuple_t &&tuple)
 			: HandlerT(std::move(handler))
-			, tuple_(std::make_tuple(args...))
-		{}
-
-		dynamic_param_holder_t(tuple_t &&tuple, HandlerT &&handler)
-			: HandlerT(std::move(handler))
-			, tuple_(std::move(val))
+			, tuple_(std::move(tuple))
 		{}
 
 		dynamic_param_holder_t(dynamic_param_holder_t &&rhs)
@@ -186,9 +163,12 @@ namespace async { namespace service {
 	};
 
 	template < typename HandlerT, typename ...Args >
-	dynamic_param_holder_t<HandlerT, Args...> make_dynamic_param(HandlerT && handler, Args && ...args)
+	auto make_dynamic_param(HandlerT && handler, Args && ...args)->
+		dynamic_param_holder_t<HandlerT, decltype( std::make_tuple(details::make_param(std::forward<Args>(args))...))>
 	{
-		return dynamic_param_holder_t<HandlerT, Args...>(std::forward<HandlerT>(handler), std::forward<Args>(args)...);
+		auto tuple = std::make_tuple(details::make_param(std::forward<Args>(args))...);
+
+		return dynamic_param_holder_t<HandlerT, decltype(tuple)>(std::forward<HandlerT>(handler), std::move(tuple));
 	}
 	
 }}
