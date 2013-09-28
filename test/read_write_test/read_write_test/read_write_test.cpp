@@ -41,16 +41,16 @@ public:
 	}
 
 public:
-	template < typename BufferT, typename HandlerT >
-	void async_read(BufferT &&buffer, HandlerT &&handler)
+	template < typename BufferT, typename HandlerT, typename AllocatorT >
+	void async_read(BufferT &buffer, HandlerT &&handler, const AllocatorT &allocator)
 	{
-		io_.post(std::bind(&mock_socket_t::handle_read_5<BufferT, HandlerT>, this, std::move(buffer), std::move(handler)));
+		io_.post(std::bind(&mock_socket_t::handle_read_5<BufferT, HandlerT>, this, buffer, std::move(handler)), allocator);
 	}
 
-	template < typename BufferT, typename HandlerT >
-	void async_write(BufferT &&buffer, HandlerT &&handler)
+	template < typename BufferT, typename HandlerT, typename AllocatorT >
+	void async_write(const BufferT &buffer, HandlerT &&handler, const AllocatorT &allocator)
 	{
-		io_.post(std::bind(&mock_socket_t::handle_write<BufferT, HandlerT>, this, std::move(buffer), std::move(handler)));
+		io_.post(std::bind(&mock_socket_t::handle_write<BufferT, HandlerT>, this, buffer, std::move(handler)), allocator);
 	}
 
 
@@ -185,7 +185,7 @@ public:
 	template < typename BufferT, typename HandlerT >
 	void handle_write(const BufferT &buffer, HandlerT &handler)
 	{
-		handler(std::error_code(0, std::system_category()), 1);
+		handler(std::error_code(), buffer.size());
 	}
 };
 
@@ -196,7 +196,7 @@ void read(SocketT &sock, char (&buffer)[N], DecoderT &decoder)
 	{
 		decoder.handle(sock, buffer, sz);
 		read(sock, buffer, decoder);
-	});
+	}, std::allocator<char>());
 }
 
 
@@ -222,22 +222,19 @@ void write_test()
 	char buf[1024] = {"test"};
 
 	service::async_write(sock, service::buffer(buf), service::transfer_all(), 
-		[](std::error_code err, std::uint32_t sz)
+		[](const std::error_code &err, std::uint32_t sz)
 	{
 		std::cout << __FUNCTION__ << std::endl;
-	});
+	}, std::allocator<char>());
 
-	service::const_array_buffer_t buffer;
-	buffer << service::buffer("test")
-		<< service::buffer("const array");
 
 	//for(std::uint32_t i = 0; i != 100000; ++i)
 	{
-		service::async_write(sock, std::move(buffer), service::transfer_all(), 
+		service::async_write(sock, service::buffer("test"), service::transfer_all(), 
 			[](std::error_code err, std::uint32_t sz)
 		{
 			//std::cout << __FUNCTION__ << std::endl;
-		});
+		}, std::allocator<char>());
 	}
 
 	system("pause");

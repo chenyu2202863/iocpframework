@@ -11,8 +11,6 @@
 #include <cassert>
 
 #include "../basic.hpp"
-#include "object_factory.hpp"
-
 
 namespace async { namespace service {
 

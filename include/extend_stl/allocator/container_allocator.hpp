@@ -75,17 +75,11 @@ namespace stdex
 			{ return &s; }
 			size_type max_size() const
 			{ return (std::numeric_limits<size_type>::max)() / sizeof(value_type); }
-			//void construct(pointer ptr, const T &t)
-			//{ std::_Construct(ptr, t); }
-			void construct(pointer _Ptr, T&& _Val)
-			{	// construct object at _Ptr with value _Val
-				::new ((void *)_Ptr) T(std::forward<T>(_Val));
-			}
 
-			template<typename U>
-			void construct(pointer _Ptr, U &&_Val)
+			template<typename ...Args>
+			void construct(pointer _Ptr, Args &&..._Val)
 			{	
-				::new ((void *)_Ptr) T(std::forward<U>(_Val));
+				::new ((void *)_Ptr) T(std::forward<Args>(_Val)...);
 			}
 
 			void destroy(pointer ptr)

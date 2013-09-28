@@ -219,13 +219,13 @@ namespace async { namespace service {
 	template<typename SyncWriteStreamT, typename ConstBufferT, typename HandlerT, typename AllocatorT>
 	void async_write(SyncWriteStreamT &s, const ConstBufferT &buffer, const HandlerT &handler, const AllocatorT &allocator)
 	{
-		async_write(s, std::forward<ConstBufferT>(buffer), transfer_all(), handler, allocator);
+		async_write(s, buffer, transfer_all(), handler, allocator);
 	}
 
 	template<typename SyncWriteStreamT, typename ConstBufferT, typename HandlerT, typename AllocatorT>
 	void async_write(SyncWriteStreamT &s, const ConstBufferT &buffer, const std::uint64_t &offset, const HandlerT &handler, const AllocatorT &allocator)
 	{
-		async_write(s, std::forward<ConstBufferT>(buffer), offset, transfer_all(), handler, allocator);
+		async_write(s, buffer, offset, transfer_all(), handler, allocator);
 	}
 
 	// 
@@ -235,7 +235,7 @@ namespace async { namespace service {
 		typedef details::write_handler_t<SyncWriteStreamT, ConstBufferT, ComplateConditionT, HandlerT, AllocatorT> HookWriteHandler;
 
 		HookWriteHandler hook_handler(s, buf, buf.size(), condition, 0, std::forward<HandlerT>(handler), allocator);
-		s.async_write(hook_handler.buffer_, std::move(hook_handler), allocator);
+		s.async_write(buf, std::move(hook_handler), allocator);
 	}
 
 	template<typename SyncWriteStreamT, typename ConstBufferT, typename ComplateConditionT, typename HandlerT>

@@ -85,7 +85,6 @@
     <ClInclude Include="..\..\..\include\async_io\service\dispatcher.hpp" />
     <ClInclude Include="..\..\..\include\async_io\service\exception.hpp" />
     <ClInclude Include="..\..\..\include\async_io\service\iocp.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\service\object_factory.hpp" />
     <ClInclude Include="..\..\..\include\async_io\service\read.hpp" />
     <ClInclude Include="..\..\..\include\async_io\service\read_write_buffer.hpp" />
     <ClInclude Include="..\..\..\include\async_io\service\write.hpp" />

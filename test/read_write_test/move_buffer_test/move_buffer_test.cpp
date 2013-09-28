@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 #include "../../../include/async_io/network.hpp"
+#include "../../../include/serialize/serialize.hpp"
 
 using namespace async;
 using namespace network;
@@ -12,53 +13,10 @@ using namespace network;
 
 
 
-
-struct ret_helper
-{
-	char buf_[32];
-	int n_;
-
-	ret_helper()
-		: n_(10)
-	{
-		std::memset(buf_, 0, _countof(buf_));
-	}
-
-	template < typename T >
-	operator T &()
-	{
-		return buf_;
-	}
-
-	operator int &()
-	{
-		return n_;
-	}
-};
-
-
-
 int _tmain(int argc, _TCHAR* argv[])
 {
-	
-	ret_helper ret;
-	char (&test_buf)[32] = ret;
-
-	int n = ret;
-
 	server svr(5050);
-	char buf[20] = {0};	
-	
-	int valxx = 10;
-	std::string val2xx = "123";
-	std::vector<char> val3xx(10, 'a');
-
-	auto param1 = service::make_static_param([](const session_ptr &session)
-	{
-
-	}, std::move(valxx), std::move(val2xx), std::move(val3xx));
-
-
+	char buf[30] = {0};	
 	
 
 	svr.register_accept_handler([&buf](const session_ptr &session, const std::string &ip)->bool
@@ -66,15 +24,22 @@ int _tmain(int argc, _TCHAR* argv[])
 		std::cout << "accept remote: " << ip << std::endl;
 
 		
-		auto recv_handler = [&buf](const session_ptr &session)
+		auto recv_handler = [&buf](const session_ptr &session, std::uint32_t size)
 		{
-			std::cout << buf << std::endl;
+			serialize::i_serialize in(buf, size);
+			int valxx = 0;
+			std::string val2xx;
+			std::vector<char> val3xx;
 
-			//session->async_write(std::move(param1));
-
+			in >> valxx >> val2xx >> val3xx;
+			
+			session->async_write([](const session_ptr &session, std::uint32_t size)
+			{
+				std::cout << "ok" << size << std::endl;
+			}, std::allocator<char>(), std::move(valxx), std::move(val2xx), std::move(val3xx));
 		};
 		
-		session->async_read(std::move(service::mutable_buffer_t(buf, sizeof(buf))), std::move(recv_handler));
+		session->async_read_some(std::move(service::mutable_buffer_t(buf, sizeof(buf))), 4, std::move(recv_handler));
 
 		
 		return true;
@@ -94,10 +59,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	svr.start();
 
 	service::io_dispatcher_t io([](const std::string &err){ std::cerr << err << std::endl; }, 1);
-	async::timer::win_timer_service_t timer_svr(io);
-
-	client cli(io, timer_svr);
-	bool suc = cli.start("127.0.0.1", 5050, std::chrono::seconds(3));
+	client cli(io);
+	bool suc = cli.start("127.0.0.1", 5050);
 	if( !suc )
 		return -1;
 
@@ -105,49 +68,23 @@ int _tmain(int argc, _TCHAR* argv[])
 	std::string val2 = "123456";
 	std::vector<char> val3(10, 'a');
 
-	auto param2 = service::make_static_param([]()
-	{
-	}, std::move(header_len), std::move(val2), std::move(val3));
-
-	cli.async_send(std::move(param2));
-
-	char recv_buf[15] = {0};
-	cli.async_recv(recv_buf, sizeof(recv_buf), []()
+	
+	char recv_buf[35] = {0};
+	cli.async_recv(recv_buf, sizeof(recv_buf), [](std::uint32_t size)
 	{
 
 	});
 
 
-	struct custom_data_t
+	int valxx = 10;
+	std::string val2xx = "123";
+	std::vector<char> val3xx(10, 'a');
+
+
+	cli.async_send([](std::uint32_t size)
 	{
-		std::string data1_;
-		std::string data2_;
-
-		custom_data_t()
-			: data1_("chenyu")
-			, data2_("test")
-		{}
-
-		custom_data_t(custom_data_t &&rhs)
-			: data1_(std::move(rhs.data1_))
-			, data2_(std::move(rhs.data2_))
-		{}
-
-		service::const_array_buffer_t buffers() const
-		{
-			service::const_array_buffer_t buffer;
-			buffer << service::buffer(data1_)
-				<< service::buffer(data2_);
-
-			return buffer;
-		}
-	}val4xxx;
-
-	auto param3 = service::make_dynamic_param([]()
-	{
-	}, std::move(val4xxx));
-	cli.async_send(std::move(param3));
-
+	
+	}, std::allocator<char>(), std::move(valxx), std::move(val2xx), std::move(val3xx));
 	
 
 	system("pause");

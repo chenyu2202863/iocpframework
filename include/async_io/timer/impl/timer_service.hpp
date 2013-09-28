@@ -282,7 +282,7 @@ namespace async {
 						break;
 					else if( res == WAIT_FAILED )
 					{
-						assert(0);
+						_Copy(handles);
 						continue;
 					}
 					else if( res == WAIT_OBJECT_0 )

@@ -120,8 +120,8 @@ namespace async { namespace network {
 		// 异步TCP写入
 		template < typename HandlerT, typename AllocatorT >
 		void async_write(const service::const_buffer_t &buf, HandlerT &&callback, const AllocatorT &allocator);
-		template < typename HandlerT, typename AllocatorT >
-		void async_write(const service::const_array_buffer_t &buf, HandlerT &&callback, const AllocatorT &allocator);
+		template < typename ParamT, typename AllocatorT >
+		void async_write(ParamT &&param, const AllocatorT &allocator);
 
 		// 异步UDP读取
 		template < typename HandlerT >
@@ -129,9 +129,7 @@ namespace async { namespace network {
 		// 异步UDP读入
 		template < typename HandlerT >
 		void async_recv_from(service::mutable_buffer_t &buf, SOCKADDR_IN *addr, HandlerT &&callback);
-	
-	private:
-		void _async_write_impl(const service::const_array_buffer_t &const_array, service::async_callback_base_ptr &ptr);
+
 	};
 }
 }
@@ -262,7 +260,7 @@ namespace async { namespace network {
 			&& ::WSAGetLastError() != WSA_IO_PENDING )
 			throw service::win32_exception_t("WSARecv");
 		else if( ret == 0 )
-			asynResult->invoke(std::make_error_code((std::errc)::WSAGetLastError()), dwSize);
+			asynResult->invoke(std::error_code(), dwSize);
 		else
 			asynResult.release();
 	}
@@ -285,18 +283,30 @@ namespace async { namespace network {
 			&& ::WSAGetLastError() != WSA_IO_PENDING )
 			throw service::win32_exception_t("WSASend");
 		else if( ret == 0 )
-			asynResult->invoke(std::make_error_code((std::errc)::WSAGetLastError()), dwSize);
+			asynResult->invoke(std::error_code(), dwSize);
 		else
 			asynResult.release();
 	}
 
-	template < typename HandlerT, typename AllocatorT >
-	void socket_handle_t::async_write(const service::const_array_buffer_t &buf, HandlerT &&callback, const AllocatorT &allocator)
+
+	template < typename ParamT, typename AllocatorT >
+	void socket_handle_t::async_write(ParamT &&param, const AllocatorT &allocator)
 	{
-		auto async_callback_val = service::make_async_callback(std::forward<HandlerT>(callback), allocator);
+		auto async_callback_val = service::make_async_callback(std::forward<ParamT>(param), allocator);
 		service::async_callback_base_ptr asynResult(async_callback_val);
 
-		_async_write_impl(buf, asynResult);
+		auto buffers = async_callback_val->handler_.buffers();
+		DWORD dwFlag = 0;
+		DWORD dwSize = 0;
+
+		int ret = ::WSASend(socket_, buffers.data(), buffers.size(), &dwSize, dwFlag, asynResult.get(), NULL);
+		if( 0 != ret
+		   && ::WSAGetLastError() != WSA_IO_PENDING )
+		   throw service::win32_exception_t("WSASend");
+		else if( ret == 0 )
+			asynResult->invoke(std::error_code(), dwSize);
+		else
+			asynResult.release();
 	}
 
 
@@ -335,7 +345,7 @@ namespace async { namespace network {
 			&& ::WSAGetLastError() != WSA_IO_PENDING )
 			throw service::win32_exception_t("WSASendTo");
 		else if( ret == 0 )
-			asynResult->invoke(std::make_error_code((std::errc)::WSAGetLastError()), dwSize);
+			asynResult->invoke(std::error_code(), dwSize);
 		else
 			asynResult.release();
 	}	
@@ -359,7 +369,7 @@ namespace async { namespace network {
 			&& ::WSAGetLastError() != WSA_IO_PENDING )
 			throw service::win32_exception_t("WSARecvFrom");
 		else if( ret == 0 )
-			asynResult->invoke(std::make_error_code((std::errc)::WSAGetLastError()), dwSize);
+			asynResult->invoke(std::error_code(), dwSize);
 		else
 			asynResult.release();
 	}

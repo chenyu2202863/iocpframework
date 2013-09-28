@@ -18,17 +18,17 @@ struct session_buffer_t
 
 void read(const network::session_ptr &session)
 {
-	session_buffer_t *buffer = static_cast<session_buffer_t *>(session->additional_data());
+	session_buffer_t *buffer = session->additional_data<session_buffer_t *>();
 	network::async_read(session, buffer->read_buf_.data(), buffer->read_buf_.size(), 
-		make_custom_handler(buffer->read_allocator_, [](const network::session_ptr &session, std::uint32_t len)
+		[](const network::session_ptr &session, std::uint32_t len)
 	{
-		session_buffer_t *buffer = static_cast<session_buffer_t *>(session->additional_data());
+		session_buffer_t *buffer = session->additional_data<session_buffer_t *>();
 		network::async_write(session, buffer->read_buf_.data(), buffer->read_buf_.size(),
-			make_custom_handler(buffer->write_allocator_, [](const network::session_ptr &session, std::uint32_t len)
+			[](const network::session_ptr &session, std::uint32_t len)
 		{
 			read(session);
-		}));
-	}));
+		});
+	});
 }
 
 void svr_start(char **argv)
@@ -38,7 +38,7 @@ void svr_start(char **argv)
 	std::uint32_t block_size = std::atoi(argv[2]);
 	svr.register_accept_handler([block_size](const network::session_ptr &session, const std::string &ip)->bool
 	{
-		session->additional_data(new session_buffer_t(block_size));
+		session->additional_data(new session_buffer_t(block_size), std::allocator<session_buffer_t *>());
 		read(session);
 
 		return true;

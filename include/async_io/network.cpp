@@ -73,7 +73,13 @@ namespace async { namespace network {
 			typedef stdex::allocator::pool_allocator_t<session, session_pool_t> pool_allocator_t;
 
 			tcp v4_ver = tcp::v4();
-			return std::allocate_shared<socket_handle_t>(pool_allocator_t(), io_, v4_ver.family(), v4_ver.type(), v4_ver.protocol());
+			auto sck = std::allocate_shared<socket_handle_t>(pool_allocator_t(), io_, v4_ver.family(), v4_ver.type(), v4_ver.protocol());
+
+			sck->set_option(network::linger(true, 0));
+			sck->set_option(network::no_delay(true));
+			sck->set_option(network::reuse_addr(true));
+
+			return sck;
 		})
 		{
 		}
@@ -98,7 +104,7 @@ namespace async { namespace network {
 
 		void _thread_impl()
 		{
-			static const std::uint32_t MAX_ACCEPT_NUM = 50;
+			static const std::uint32_t MAX_ACCEPT_NUM = 1;
 
 			// 通过使用WSAEventSelect来判断是否有足够的AcceptEx，或者检测出一个非正常的客户请求
 			HANDLE accept_event = ::CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -127,9 +133,9 @@ namespace async { namespace network {
 											   std::bind(&impl::_handle_accept, this, service::_Error, service::_Socket),
 											   pool_allocator);
 					}
-					catch( std::exception &e )
+					catch( std::exception &e)
 					{
-						error_handle_(create_session(svr_, session_pool_, std::move(sck), error_handle_, disconnect_handle_), e.what());
+						assert(0);
 					}
 				}
 
@@ -147,15 +153,18 @@ namespace async { namespace network {
 		, error_handler_(error_handler)
 		, disconnect_handler_(disconnect_handler)
 	{
-		sck_->set_option(network::linger(true, 0));
-		sck_->set_option(network::no_delay(true));
+		
 	}
 	session::~session()
 	{
+		svr_.impl_->socket_pool_.raw_release(std::move(sck_));
 	}
 
 	std::string session::get_ip() const
 	{
+		if( !sck_ )
+			return "socket was closed";
+
 		if( !sck_->is_open() )
 			return "unknown ip, socket was closed";
 
@@ -166,7 +175,6 @@ namespace async { namespace network {
 	void session::shutdown()
 	{
 		sck_->cancel();
-		sck_->shutdown(SD_BOTH);
 	}
 
 	void session::disconnect()
@@ -191,7 +199,6 @@ namespace async { namespace network {
 
 			sck_->async_disconnect(true, [this_val](const std::error_code &e, std::uint32_t sz) mutable
 			{
-				this_val->svr_.impl_->socket_pool_.raw_release(std::move(this_val->sck_));
 			}, pool_allocator_t(this_val->svr_.impl_->session_allocator_pool_));
 		}
 		catch( std::exception &e )

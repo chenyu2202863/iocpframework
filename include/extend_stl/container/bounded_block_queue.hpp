@@ -1,10 +1,9 @@
 #ifndef __CONTAINER_BOUNDED_BLOCKING_QUEUE_HPP
 #define __CONTAINER_BOUNDED_BLOCKING_QUEUE_HPP
 
-
-#include "../../multi_thread/lock.hpp"
+#include <mutex>
 #include <queue>
-
+#include <chrono>
 
 
 /*
@@ -16,33 +15,25 @@ bounded_block_queue_t
 
 */
 
-namespace stdex
-{
-
-
-	namespace container
-	{
+namespace stdex { namespace container {
 
 		template< typename T, typename A = std::allocator<T> >
 		class bounded_block_queue_t
 		{
-			typedef multi_thread::critical_section		Mutex;
-			typedef multi_thread::auto_lock_t<Mutex>	AutoLock;
-			typedef multi_thread::semaphore_condition	Condtion;
-			typedef std::deque<T, A>					Container;
+			typedef std::lock_guard<std::mutex> auto_lock;
 
-			mutable Mutex mutex_;
-			Condtion not_empty_;
-			Condtion not_full_;
-			Container queue_;
+			mutable std::mutex mutex_;
+			std::condition_variable not_empty_;
+			std::condition_variable not_full_;
+			std::deque<T, A> queue_;
 
-			size_t max_size_;
+			std::uint32_t max_size_;
 
 		public:
-			explicit bounded_block_queue_t(size_t maxSize)
+			explicit bounded_block_queue_t(std::uint32_t maxSize)
 				: max_size_(maxSize)
 			{} 
-			bounded_block_queue_t(size_t maxSize, A &allocator)
+			bounded_block_queue_t(std::uint32_t maxSize, A &allocator)
 				: max_size_(maxSize)
 				, queue_(allocator)
 			{}
@@ -52,18 +43,18 @@ namespace stdex
 			bounded_block_queue_t &operator=(const bounded_block_queue_t &);
 
 		public:
-			void put(const T &x, DWORD time_out = INFINITE)
+			void put(T &&x, std::chrono::milliseconds time_out = INFINITE)
 			{
 				{
-					AutoLock lock(mutex_);
+					auto_lock lock(mutex_);
 					while(queue_.size() == max_size_ )
-						not_full_.wait(mutex_, time_out);
+						not_full_.wait_for(mutex_, time_out);
 
 					assert(queue_.size() != max_size_);
-					queue_.push_back(x);
+					queue_.push_back(std::forward<T>(x));
 				}
 
-				not_empty_.signal();
+				not_empty_.notify_one();
 			}
 
 			T get()
@@ -71,34 +62,34 @@ namespace stdex
 				T front;
 
 				{
-					AutoLock lock(mutex_);
+					auto_lock lock(mutex_);
 					while(queue_.empty())
-						not_empty_.wait(mutex_, INFINITE);
+						not_empty_.wait(mutex_, std::chrono::milliseconds(INFINITE));
 
 					assert(!queue_.empty());
-					front = queue_.front();
+					front = std::move(queue_.front());
 					queue_.pop_front();
 				}
 
-				not_full_.signal();
+				not_full_.notify_one();
 				return front;
 			}
 
 			bool empty() const
 			{
-				AutoLock lock(mutex_);
+				auto_lock lock(mutex_);
 				return queue_.empty();
 			}
 
 			bool full() const
 			{
-				AutoLock lock(mutex_);
+				auto_lock lock(mutex_);
 				return queue_.size() == max_size_;
 			}
 
 			size_t size() const
 			{
-				AutoLock lock(mutex_);
+				auto_lock lock(mutex_);
 				return queue_.size();
 			}
 		};

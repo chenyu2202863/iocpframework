@@ -1,92 +1,199 @@
 #ifndef __SERIALIZE_IN_HPP
 #define __SERIALIZE_IN_HPP
 
+#include <cassert>
 #include <type_traits>
+#include <cstdint>
+
+namespace serialize { namespace detail {
 
 
-namespace serialize
-{
-	namespace detail
+	template <
+		typename CharT,
+		template < typename > class BufferT
+	>
+	struct empty_in_t
 	{
-		template < typename CharT, typename ImplT >
-		class serialize_in_t
+		typedef std::false_type is_need_in_t; 
+		typedef std::false_type	is_need_length_t;
+
+		empty_in_t(BufferT<CharT> &buffer)
+		{}
+
+		template < typename T >
+		void push(const T &val)
 		{
-		public:
-			typedef CharT				value_type;
-			typedef CharT *				pointer;
-			typedef value_type &		reference;
-			typedef const CharT *		const_pointer;
-			typedef const value_type &	const_reference;
+		}
 
-			typedef std::char_traits<CharT> CharTraits;
+		template < typename T, std::uint32_t N >
+		void push_array(const T(&arr)[N])
+		{
+		}
 
-		public:
-			serialize_in_t()
-				: inPos_(0)
-			{}
+		template < typename T >
+		void push_pointer(const T * const ptr, std::uint32_t cnt = 1)
+		{
+		}
+	};
 
-		private:
-			size_t inPos_;
 
-		public:
-			size_t in_length() const
-			{
-				return inPos_;
-			}
+	template <
+		typename CharT,
+		template < typename > class BufferT
+	>
+	class binary_in_t
+	{
+		typedef BufferT<CharT>		buffer_t;
 
-		public:
-			template < typename T >
-			void push(const T &val)
-			{
-				static_assert(std::is_pod<T>::value, "T must be a POD type");
+	public:
+		typedef std::true_type		is_need_in_t; 
+		typedef std::true_type		is_need_length_t;
 
-				// 检测T类型
-				assert(sizeof(T) + inPos_ <= impl()->buffer_length());
-				if( sizeof(T) + inPos_ > impl()->buffer_length() )
-					throw std::out_of_range("sizeof(T) + pos_ > bufLen_");
+		typedef CharT				value_type;
+		typedef CharT *				pointer;
+		typedef value_type &		reference;
+		typedef const CharT *		const_pointer;
+		typedef const value_type &	const_reference;
 
-				const_pointer buf = reinterpret_cast<const_pointer>(&val);
-				impl()->write(buf, sizeof(T), inPos_);
-				inPos_ += sizeof(T);
-			}
+	public:
+		binary_in_t(buffer_t &buffer)
+			: in_pos_(0)
+			, buffer_(buffer)
+		{}
 
-			template < typename T, size_t N >
-			void push_array(const T (&arr)[N])
-			{
-				static_assert(std::is_pod<T>::value, "T must be a POD type");
+	private:
+		std::uint32_t in_pos_;
+		buffer_t &buffer_;
 
-				const size_t len = sizeof(T) * N;
-				assert(len + inPos_ <= impl()->buffer_length());
-				if( len + inPos_ > impl()->buffer_length() )
-					throw std::out_of_range("sizeof(T) + pos_ > bufLen_");
+	public:
+		std::uint32_t in_length() const
+		{
+			return in_pos_;
+		}
 
-				const_pointer buf = reinterpret_cast<const_pointer>(&arr);
-				impl()->write(buf, len, inPos_);
-				inPos_ += len;
-			}
+	public:
+		template < typename T >
+		void push(const T &val)
+		{
+			static_assert( std::is_pod<T>::value, "T must be a POD type" );
 
-			template < typename T >
-			void push_pointer(const T * const ptr, size_t cnt = 1)
-			{
-				static_assert(std::is_pod<T>::value, "T must be a POD type");
+			// 检测T类型
+			assert(sizeof( T ) + in_pos_ <= buffer_.buffer_length());
+			if(sizeof( T ) + in_pos_ > buffer_.buffer_length())
+				throw std::out_of_range("sizeof(T) + pos_ > bufLen_");
 
-				const size_t len = sizeof(T) * cnt;
-				assert(len + inPos_ <= impl()->buffer_length());
-				if( len + inPos_ > impl()->buffer_length() )
-					throw std::out_of_range("sizeof(T) + pos_ > bufLen_");
+			const_pointer buf = reinterpret_cast< const_pointer >( &val );
+			buffer_.write(buf, sizeof( T ), in_pos_);
+			in_pos_ += sizeof( T );
+		}
 
-				const_pointer buf = reinterpret_cast<const_pointer>(ptr);
-				impl()->write(buf, len, inPos_);
-				inPos_ += len;
-			}
+		template < typename T, std::uint32_t N >
+		void push_array(const T(&arr)[N])
+		{
+			static_assert( std::is_pod<T>::value, "T must be a POD type" );
 
-		private:
-			ImplT *impl()
-			{
-				return static_cast<ImplT *>(this);
-			}
-		};
-	}
+			const std::uint32_t len = sizeof( T ) * N;
+			assert(len + in_pos_ <= buffer_.buffer_length());
+			if(len + in_pos_ > buffer_.buffer_length())
+				throw std::out_of_range("sizeof(T) + pos_ > bufLen_");
+
+			const_pointer buf = reinterpret_cast< const_pointer >( &arr );
+			buffer_.write(buf, len, in_pos_);
+			in_pos_ += len;
+		}
+
+		template < typename T >
+		void push_pointer(const T * const ptr, std::uint32_t cnt = 1)
+		{
+			static_assert( std::is_pod<T>::value, "T must be a POD type" );
+
+			const std::uint32_t len = sizeof( T ) * cnt;
+			assert(len + in_pos_ <= buffer_.buffer_length());
+			if(len + in_pos_ > buffer_.buffer_length())
+				throw std::out_of_range("sizeof(T) + pos_ > bufLen_");
+
+			const_pointer buf = reinterpret_cast< const_pointer >( ptr );
+			buffer_.write(buf, len, in_pos_);
+			in_pos_ += len;
+		}
+	};
+
+
+	template <
+		typename CharT,
+		template < typename > class BufferT
+	>
+	class text_in_t
+	{
+		typedef BufferT<CharT>		buffer_t;
+
+	public:
+		typedef std::true_type		is_need_in_t; 
+		typedef std::false_type		is_need_length_t;
+		typedef CharT				value_type;
+		typedef CharT *				pointer;
+		typedef value_type &		reference;
+		typedef const CharT *		const_pointer;
+		typedef const value_type &	const_reference;
+
+	public:
+		text_in_t(buffer_t &buffer)
+			: in_pos_(0)
+			, buffer_(buffer)
+		{}
+
+	private:
+		std::uint32_t in_pos_;
+		buffer_t &buffer_;
+
+	public:
+		std::uint32_t in_length() const
+		{
+			return in_pos_;
+		}
+
+	public:
+		template < typename T >
+		void push(const T &val)
+		{
+			static_assert( std::is_pod<T>::value, "T must be a POD type" );
+
+			// 检测T类型
+			assert(sizeof( T ) + in_pos_ <= buffer_.buffer_length());
+			if(sizeof( T ) + in_pos_ > buffer_.buffer_length())
+				throw std::out_of_range("sizeof(T) + pos_ > bufLen_");
+
+			auto t = std::to_string(val);
+			buffer_.write(t.data(), t.size(), in_pos_);
+			in_pos_ += t.size();
+		}
+
+		void push(char val)
+		{
+			// 检测T类型
+			assert(sizeof(val) + in_pos_ <= buffer_.buffer_length());
+			if(sizeof(val) + in_pos_ > buffer_.buffer_length())
+				throw std::out_of_range("sizeof(T) + pos_ > bufLen_");
+
+			buffer_.write(&val, sizeof(val), in_pos_);
+			in_pos_ += sizeof(val);
+		}
+
+		template < typename T >
+		void push_pointer(const T * const ptr, std::uint32_t cnt = 1)
+		{
+			static_assert( std::is_pod<T>::value, "T must be a POD type" );
+
+			const std::uint32_t len = sizeof( T ) * cnt;
+			assert(len + in_pos_ <= buffer_.buffer_length());
+			if(len + in_pos_ > buffer_.buffer_length())
+				throw std::out_of_range("sizeof(T) + pos_ > bufLen_");
+
+			buffer_.write(ptr, cnt, in_pos_);
+			in_pos_ += cnt;
+		}
+	};
+}
 }
 
 

@@ -254,44 +254,6 @@ namespace async { namespace network {
 		return dwSize;
 	}
 
-	void socket_handle_t::_async_write_impl(const service::const_array_buffer_t &const_array, service::async_callback_base_ptr &ptr)
-	{
-		struct const_wsa_buf_t
-			: WSABUF
-		{
-			const_wsa_buf_t()
-			{}
-			const_wsa_buf_t(std::uint32_t len, const char *buf)
-			{
-				WSABUF::len = len;
-				WSABUF::buf = const_cast<char *>(buf);
-			}
-		};
-
-		stdex::allocator::stack_storage_t<8192> storage;
-		typedef stdex::allocator::stack_allocator_t<const_wsa_buf_t, 8192> stack_pool_t;
-		stack_pool_t alloc(&storage);
-		std::vector<const_wsa_buf_t, stack_pool_t> wsabuf(alloc);
-
-		const auto &buf = const_array;
-		auto cnt = buf.buffer_count();
-		wsabuf.resize(cnt);
-
-		for(auto iter = buf.buffers_.cbegin(); iter != buf.buffers_.cend(); ++iter)
-			wsabuf[--cnt] = const_wsa_buf_t(iter->size(), iter->data());
-
-		DWORD dwFlag = 0;
-		DWORD dwSize = 0;
-
-		int ret = ::WSASend(socket_, wsabuf.data(), wsabuf.size(), &dwSize, dwFlag, ptr.get(), NULL);
-		if( 0 != ret
-			&& ::WSAGetLastError() != WSA_IO_PENDING )
-			throw service::win32_exception_t("WSASend");
-		else if( ret == 0 )
-			ptr->invoke(std::make_error_code((std::errc)::WSAGetLastError()), dwSize);
-		else
-			ptr.release();
-	}
 }
 
 }

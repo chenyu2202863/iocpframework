@@ -14,6 +14,7 @@
     <ProjectGuid>{74B3FA5F-4EDE-4739-8380-C8B596EE643C}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>move_buffer_test</RootNamespace>
+    <ProjectName>zero_copy_test</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -99,7 +100,6 @@
     <ClInclude Include="..\..\..\include\async_io\service\exception.hpp" />
     <ClInclude Include="..\..\..\include\async_io\service\iocp.hpp" />
     <ClInclude Include="..\..\..\include\async_io\service\multi_buffer.hpp" />
-    <ClInclude Include="..\..\..\include\async_io\service\object_factory.hpp" />
     <ClInclude Include="..\..\..\include\async_io\service\read.hpp" />
     <ClInclude Include="..\..\..\include\async_io\service\read_write_buffer.hpp" />
     <ClInclude Include="..\..\..\include\async_io\service\write.hpp" />

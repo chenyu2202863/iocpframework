@@ -54,9 +54,6 @@
     <ClInclude Include="..\..\..\include\async_io\service\iocp.hpp">
       <Filter>include\async\service</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\async_io\service\object_factory.hpp">
-      <Filter>include\async\service</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\include\async_io\service\read.hpp">
       <Filter>include\async\service</Filter>
     </ClInclude>

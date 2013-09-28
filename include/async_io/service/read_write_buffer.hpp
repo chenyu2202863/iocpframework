@@ -179,132 +179,10 @@ namespace async { namespace service {
 
 		return const_buffer_t(newData, newSize);
 	}
+
 	inline const_buffer_t operator+(size_t sz, const const_buffer_t &buffer)
 	{
 		return buffer + sz;
-	}
-
-	// ---------------------------------------------------------
-	// class const_array_buffer_t
-
-	struct const_array_buffer_t
-	{
-		enum { MAX_BUFFER_SIZE = 4 * 1024 };
-		typedef stdex::allocator::stack_allocator_t<const_buffer_t, MAX_BUFFER_SIZE> const_buffer_allocator_t;
-		typedef std::list<const_buffer_t, const_buffer_allocator_t> const_buffers_t;
-
-		stdex::allocator::stack_storage_t<MAX_BUFFER_SIZE> storage_;
-		const_buffer_allocator_t alloc_;
-		const_buffers_t buffers_;
-		std::uint16_t buffer_cnt_;
-		std::uint32_t buffer_size_;
-
-	public:
-		const_array_buffer_t()
-			: alloc_(&storage_)
-			, buffers_(alloc_)
-			, buffer_cnt_(0)
-			, buffer_size_(0)
-		{}
-		~const_array_buffer_t()
-		{}
-
-		const_array_buffer_t(const const_array_buffer_t &rhs)
-			: alloc_(&storage_)
-			, buffers_(rhs.buffers_, alloc_)
-			, buffer_cnt_(rhs.buffer_cnt_)
-			, buffer_size_(rhs.buffer_size_)
-		{
-		}
-
-		const_array_buffer_t(const_array_buffer_t &&rhs)
-			: alloc_(&storage_)
-			, buffers_(rhs.buffers_, alloc_)
-			, buffer_cnt_(rhs.buffer_cnt_)
-			, buffer_size_(rhs.buffer_size_)
-		{
-		}
-
-	private:
-		const_array_buffer_t &operator=(const const_array_buffer_t &rhs);
-
-	public:
-		std::uint16_t buffer_count() const
-		{
-			return buffer_cnt_;
-		}
-
-		std::uint32_t size() const
-		{
-			return buffer_size_;
-		}
-
-		const const_array_buffer_t &data() const
-		{
-			return *this;
-		}
-
-		const_array_buffer_t &add(const_buffer_t &&buffer)
-		{
-			buffer_cnt_ += 1;
-			buffer_size_ += buffer.size();
-
-			buffers_.push_front(std::move(buffer));
-			return *this;
-		}
-
-		const_array_buffer_t &add(const_array_buffer_t &&buffer)
-		{
-			buffer_cnt_ += buffer.buffer_count();
-			buffer_size_ += buffer.size();
-			buffers_.splice(buffers_.begin(), std::move(buffer.buffers_));
-			
-			return *this;
-		}
-	};
-
-	inline const_array_buffer_t &operator<<(const_array_buffer_t &array_buffer, const_buffer_t &&buffer)
-	{
-		array_buffer.add(std::move(buffer));
-		return array_buffer;
-	}
-
-	inline const_array_buffer_t &operator<<(const_array_buffer_t &array_buffer, const_array_buffer_t &&buffer)
-	{
-		array_buffer.add(std::move(buffer));
-		return array_buffer;
-	}
-
-	inline const_array_buffer_t operator+(const const_array_buffer_t &const_buffer, std::uint32_t sz)
-	{
-		const_array_buffer_t &buffer = const_cast<const_array_buffer_t &>(const_buffer);
-		for(auto iter = buffer.buffers_.begin(); iter != buffer.buffers_.end(); ++iter)
-		{
-			if( sz >= iter->size() )
-			{
-				sz -= iter->size();
-				continue;
-			}
-			else
-			{
-				auto this_mutable_buf = *iter + sz;
-				const_array_buffer_t tmp;
-				tmp.add(std::move(this_mutable_buf));
-				std::for_each(++iter, buffer.buffers_.end(), 
-					[&tmp](const_array_buffer_t::const_buffers_t::value_type &val)
-				{
-					tmp.buffers_.push_back(std::move(val));
-				});
-
-				return std::move(tmp);
-			}
-		}
-
-		return std::move(buffer);
-	}
-	inline const_array_buffer_t operator+(std::uint32_t sz, const const_array_buffer_t &buffer)
-	{
-		return std::move(buffer + sz);
 	}
 
 
@@ -339,6 +217,7 @@ namespace async { namespace service {
 	template < typename PodT >
 	inline mutable_buffer_t buffer(std::vector<PodT> &data)
 	{
+		static_assert(std::is_pod<PodT>::value, "PodT must be pod type");
 		return mutable_buffer_t(&data[0], data.size() * sizeof(PodT));
 	}
 
@@ -349,6 +228,13 @@ namespace async { namespace service {
 	{
 		return buf;
 	}
+
+	template < typename T >
+	const_buffer_t buffer(const T &t, typename std::enable_if<std::is_pod<T>::value>::type * = nullptr)
+	{
+		return const_buffer_t(reinterpret_cast<const char *>(&t), sizeof(t));
+	}
+
 	inline const_buffer_t buffer(const char *data, std::uint32_t sz)
 	{
 		return const_buffer_t(data, sz);
@@ -371,6 +257,7 @@ namespace async { namespace service {
 	template<typename PodT>
 	inline const_buffer_t buffer(const std::vector<PodT> &data)
 	{
+		static_assert(std::is_pod<PodT>::value, "PodT must be pod type");
 		return const_buffer_t(&data[0], data.size() * sizeof(PodT));
 	}
 
@@ -379,10 +266,6 @@ namespace async { namespace service {
 		return const_buffer_t(data.data(), data.length());
 	}	
 
-	inline const_array_buffer_t buffer(const const_array_buffer_t &buf, std::uint32_t sz)
-	{
-		return std::move(const_cast<const_array_buffer_t &>(buf));
-	}
 }
 }
 

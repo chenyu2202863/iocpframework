@@ -62,10 +62,10 @@ class session_t
 	handler_allocator write_allocator_;
 
 public:
-	session_t(stats_t &stats, service::io_dispatcher_t &io, timer::win_timer_service_t &timer_svr, std::uint32_t block_size)
+	session_t(stats_t &stats, service::io_dispatcher_t &io, std::uint32_t block_size)
 		: stats_(stats)
 		, io_(io)
-		, cli_(io_, timer_svr)
+		, cli_(io_)
 		, read_bytes_(0)
 		, write_bytes_(0)
 		, read_msg_cnt_(0)
@@ -101,7 +101,7 @@ public:
 			std::cout << msg << std::endl;
 		});
 
-		cli_.start(ip, port, std::chrono::seconds(3));
+		cli_.start(ip, port);
 	}
 
 	void stop()
@@ -125,12 +125,12 @@ public:
 
 	void write()
 	{
-		cli_.async_send(write_buf_.data(), write_buf_.size(), 
-			make_custom_handler(write_allocator_, [this](std::uint32_t len)
+		cli_.async_send(service::const_buffer_t(write_buf_.data(), write_buf_.size()), 
+			[this](std::uint32_t len)
 		{
 			write_bytes_ += len;
 			read();
-		}));
+		}, std::allocator<char>());
 	}
 
 };
@@ -155,11 +155,11 @@ void client_start(char **argv)
 
 	for(auto i = 0; i != session_cnt; ++i)
 	{
-		auto session = new session_t(stats, io, timer_svr, block_size);
+		auto session = new session_t(stats, io, block_size);
 		sessions.push_back(session);
 	}
 
-	timer::timer_handle timer(timer_svr, timeout, timeout, 
+	timer::timer_handle timer(timer_svr, std::chrono::minutes(timeout), std::chrono::seconds(0), 
 		[&sessions, &io]()
 	{
 		/*std::for_each(sessions.begin(), sessions.end(), 
