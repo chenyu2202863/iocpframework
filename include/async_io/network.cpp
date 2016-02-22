@@ -104,7 +104,7 @@ namespace async { namespace network {
 
 		void _thread_impl()
 		{
-			static const std::uint32_t MAX_ACCEPT_NUM = 1;
+			static const std::uint32_t MAX_ACCEPT_NUM = 10;
 
 			// 通过使用WSAEventSelect来判断是否有足够的AcceptEx，或者检测出一个非正常的客户请求
 			HANDLE accept_event = ::CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -133,7 +133,7 @@ namespace async { namespace network {
 											   std::bind(&impl::_handle_accept, this, service::_Error, service::_Socket),
 											   pool_allocator);
 					}
-					catch( std::exception &e)
+					catch( std::exception &/*e*/)
 					{
 						assert(0);
 					}

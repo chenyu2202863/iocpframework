@@ -2,10 +2,17 @@
 
 #include <type_traits>
 #include <cstdint>
+#include <memory>
 
 
-class handler_allocator
+struct handler_allocator
 {
+	template< typename T >
+	struct rebind
+	{	// convert this type to allocator<_Other>
+		typedef T other;
+	};
+
 public:
 	handler_allocator()
 		: in_use_(false)
