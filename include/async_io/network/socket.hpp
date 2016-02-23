@@ -36,14 +36,10 @@ namespace async { namespace network {
 		socket_handle_t(dispatcher_type &, native_handle_type sock);
 		socket_handle_t(dispatcher_type &, int family, int type, int protocol);
 
-		socket_handle_t(socket_handle_t &&);
-		socket_handle_t &operator=(socket_handle_t &&);
-
-		~socket_handle_t();
-
-	private:
 		socket_handle_t(const socket_handle_t &);
 		socket_handle_t &operator=(const socket_handle_t &);
+
+		~socket_handle_t();
 
 	public:
 		// explicit转换
@@ -104,24 +100,24 @@ namespace async { namespace network {
 	public:
 		// szOutSize指定额外的缓冲区大小，以用来Accept远程连接后且收到第一块数据包才返回
 		template < typename HandlerT, typename AllocatorT >
-		void async_accept(std::shared_ptr<socket_handle_t> &&remote_sck, HandlerT &&callback, const AllocatorT &allocator);
+		void async_accept(std::shared_ptr<socket_handle_t> &&remote_sck, HandlerT &&callback, AllocatorT &allocator);
 		// 异步连接需要先绑定端口
 		template < typename HandlerT, typename AllocatorT >
-		void async_connect(const ip_address &addr, std::uint16_t uPort, HandlerT &&callback, const AllocatorT &allocator);
+		void async_connect(const ip_address &addr, std::uint16_t uPort, HandlerT &&callback, AllocatorT &allocator);
 
 		// 异步断开连接
 		template < typename HandlerT, typename AllocatorT >
-		void async_disconnect(bool is_reuse, HandlerT &&callback, const AllocatorT &allocator);
+		void async_disconnect(bool is_reuse, HandlerT &&callback, AllocatorT &allocator);
 
 		// 异步TCP读取
 		template < typename HandlerT, typename AllocatorT >
-		void async_read(service::mutable_buffer_t &buf, HandlerT &&callback, const AllocatorT &allocator);
+		void async_read(service::mutable_buffer_t &buf, HandlerT &&callback, AllocatorT &allocator);
 		
 		// 异步TCP写入
 		template < typename HandlerT, typename AllocatorT >
-		void async_write(const service::const_buffer_t &buf, HandlerT &&callback, const AllocatorT &allocator);
-		template < typename ParamT, typename AllocatorT >
-		void async_write(ParamT &&param, const AllocatorT &allocator);
+		void async_write(const service::const_buffer_t &buf, HandlerT &&callback, AllocatorT &allocator);
+		template < typename HandlerT, typename AllocatorT, typename ...Args >
+		void async_write(HandlerT &&callback, AllocatorT &allocator, const Args &...args);
 
 		// 异步UDP读取
 		template < typename HandlerT >
@@ -187,7 +183,7 @@ namespace async { namespace network {
 	}
 
 	template < typename HandlerT, typename AllocatorT >
-	void socket_handle_t::async_accept(std::shared_ptr<socket_handle_t> &&remote_sck, HandlerT &&callback, const AllocatorT &allocator)
+	void socket_handle_t::async_accept(std::shared_ptr<socket_handle_t> &&remote_sck, HandlerT &&callback, AllocatorT &allocator)
 	{
 		if( !is_open() ) 
 			throw service::network_exception("Socket not open");
@@ -212,7 +208,7 @@ namespace async { namespace network {
 
 	// 异步连接服务
 	template < typename HandlerT, typename AllocatorT >
-	void socket_handle_t::async_connect(const ip_address &addr, u_short uPort, HandlerT &&callback, const AllocatorT &allocator)
+	void socket_handle_t::async_connect(const ip_address &addr, u_short uPort, HandlerT &&callback, AllocatorT &allocator)
 	{
 		if( !is_open() )
 			throw service::network_exception("Socket not open");
@@ -244,7 +240,7 @@ namespace async { namespace network {
 
 	// 异步接接收数据
 	template < typename HandlerT, typename AllocatorT >
-	void socket_handle_t::async_read(service::mutable_buffer_t &buf, HandlerT &&callback, const AllocatorT &allocator)
+	void socket_handle_t::async_read(service::mutable_buffer_t &buf, HandlerT &&callback, AllocatorT &allocator)
 	{
 		WSABUF wsabuf = {0};
 		wsabuf.buf = buf.data();
@@ -267,7 +263,7 @@ namespace async { namespace network {
 
 	// 异步发送数据
 	template < typename HandlerT, typename AllocatorT >
-	void socket_handle_t::async_write(const service::const_buffer_t &buf, HandlerT &&callback, const AllocatorT &allocator)
+	void socket_handle_t::async_write(const service::const_buffer_t &buf, HandlerT &&callback, AllocatorT &allocator)
 	{
 		WSABUF wsabuf = {0};
 		wsabuf.buf = const_cast<char *>(buf.data());
@@ -289,17 +285,19 @@ namespace async { namespace network {
 	}
 
 
-	template < typename ParamT, typename AllocatorT >
-	void socket_handle_t::async_write(ParamT &&param, const AllocatorT &allocator)
+	template < typename HandlerT, typename AllocatorT, typename ...Args >
+	void socket_handle_t::async_write(HandlerT &&handler, AllocatorT &allocator, const Args &...args)
 	{
-		auto async_callback_val = service::make_async_callback(std::forward<ParamT>(param), allocator);
+		auto async_callback_val = service::make_async_callback(std::forward<HandlerT>(handler), allocator);
 		service::async_callback_base_ptr asynResult(async_callback_val);
 
-		auto buffers = async_callback_val->handler_.buffers();
+		std::array<WSABUF, sizeof...(args)> buffers;
+		service::unpack(buffers, args...);
+
 		DWORD dwFlag = 0;
 		DWORD dwSize = 0;
 
-		int ret = ::WSASend(socket_, buffers.data(), buffers.size(), &dwSize, dwFlag, asynResult.get(), NULL);
+		int ret = ::WSASend(socket_, (WSABUF *)buffers.data(), buffers.size(), &dwSize, dwFlag, asynResult.get(), NULL);
 		if( 0 != ret
 		   && ::WSAGetLastError() != WSA_IO_PENDING )
 		   throw service::win32_exception_t("WSASend");
@@ -312,7 +310,7 @@ namespace async { namespace network {
 
 	// 异步关闭连接
 	template < typename HandlerT, typename AllocatorT >
-	void socket_handle_t::async_disconnect(bool is_reuse, HandlerT &&callback, const AllocatorT &allocator)
+	void socket_handle_t::async_disconnect(bool is_reuse, HandlerT &&callback, AllocatorT &allocator)
 	{
 		service::async_callback_base_ptr asynResult(service::make_async_callback(std::forward<HandlerT>(callback), allocator));
 

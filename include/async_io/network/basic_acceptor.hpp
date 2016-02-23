@@ -101,7 +101,7 @@ namespace async { namespace network {
 		}
 
 		template < typename HandlerT, typename AllocatorT >
-		void async_accept(std::shared_ptr<socket_handle_t> &&sck, HandlerT &&callback, const AllocatorT &allocator)
+		void async_accept(std::shared_ptr<socket_handle_t> &&sck, HandlerT &&callback, AllocatorT &allocator)
 		{
 			return impl_.async_accept(std::move(sck), std::forward<HandlerT>(callback), allocator);
 		}

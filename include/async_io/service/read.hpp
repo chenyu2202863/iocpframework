@@ -90,10 +90,10 @@ namespace async { namespace service {
 			std::uint32_t transfers_;
 			const std::uint32_t total_;
 			HandlerT handler_;
-			AllocatorT allocator_;
+			AllocatorT &allocator_;
 
 		public:
-			read_handler_t(AsyncWriteStreamT &stream, MutableBufferT &buffer, std::uint32_t total, const CompletionConditionT &condition, std::uint32_t transfer, HandlerT &&handler, const AllocatorT &allocator)
+			read_handler_t(AsyncWriteStreamT &stream, MutableBufferT &buffer, std::uint32_t total, const CompletionConditionT &condition, std::uint32_t transfer, HandlerT &&handler, AllocatorT &allocator)
 				: stream_(stream)
 				, buffer_(buffer)
 				, condition_(condition)
@@ -220,7 +220,7 @@ namespace async { namespace service {
 
 	//
 	template<typename SyncWriteStreamT, typename MutableBufferT, typename HandlerT, typename AllocatorT >
-	void async_read(SyncWriteStreamT &s, MutableBufferT &buffer, const HandlerT &handler, const AllocatorT &allocator)
+	void async_read(SyncWriteStreamT &s, MutableBufferT &buffer, const HandlerT &handler, AllocatorT &allocator)
 	{
 		async_read(s, std::forward<MutableBufferT>(buffer), transfer_all(), handler, allocator);
 	}
@@ -233,7 +233,7 @@ namespace async { namespace service {
 
 	// 
 	template<typename SyncWriteStreamT, typename MutableBufferT, typename ComplateConditionT, typename HandlerT, typename AllocatorT >
-	void async_read(SyncWriteStreamT &s, MutableBufferT &buf, const ComplateConditionT &condition, HandlerT &&handler, const AllocatorT &allocator)
+	void async_read(SyncWriteStreamT &s, MutableBufferT &buf, const ComplateConditionT &condition, HandlerT &&handler, AllocatorT &allocator)
 	{
 		typedef details::read_handler_t<SyncWriteStreamT, MutableBufferT, ComplateConditionT, HandlerT, AllocatorT> HookReadHandler;
 

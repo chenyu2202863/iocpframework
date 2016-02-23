@@ -127,19 +127,19 @@ namespace async { namespace network {
 		socket_handle_t &get() { return *sck_; }
 		std::string get_ip() const;
 
-		template < typename HandlerT, typename AllocatorT = std::allocator<char> >
-		bool async_read(service::mutable_buffer_t &, HandlerT &&, const AllocatorT &allocator = AllocatorT());
-		template < typename HandlerT, typename AllocatorT = std::allocator<char> >
-		bool async_read_some(service::mutable_buffer_t &, std::uint32_t min_len, HandlerT &&, const AllocatorT &allocator = AllocatorT());
+		template < typename HandlerT, typename AllocatorT>
+		bool async_read(service::mutable_buffer_t &, HandlerT &&, AllocatorT &allocator);
+		template < typename HandlerT, typename AllocatorT>
+		bool async_read_some(service::mutable_buffer_t &, std::uint32_t min_len, HandlerT &&, AllocatorT &allocator);
 
-		template < typename HandlerT, typename AllocatorT = std::allocator<char> >
-		bool async_write(const service::const_buffer_t &, HandlerT &&, const AllocatorT &allocator = AllocatorT());
+		template < typename HandlerT, typename AllocatorT>
+		bool async_write(const service::const_buffer_t &, HandlerT &&, AllocatorT &allocator);
 		template < typename HandlerT, typename AllocatorT, typename ...Args >
 		typename std::enable_if<!std::is_same<HandlerT, service::const_buffer_t>::value, bool>::type
-			async_write(HandlerT &&, const AllocatorT &, Args &&...);
+			async_write(HandlerT &&, AllocatorT &, const Args &...);
 
 		template < typename T, typename AlocatorT >
-		void additional_data(const T &t, const AlocatorT &allocator);
+		void additional_data(const T &t, AlocatorT &allocator);
 
 		template < typename T >
 		T &additional_data();
@@ -157,8 +157,8 @@ namespace async { namespace network {
 		bool _run_impl(HandlerT &&handler, bool is_read_op);
 	};
 
-	template < typename HandlerT, typename AllocatorT = std::allocator<char> >
-	bool async_read(const session_ptr &val, char *buf, std::uint32_t len, HandlerT &&handler, const AllocatorT &allocator = AllocatorT())
+	template < typename HandlerT, typename AllocatorT >
+	bool async_read(const session_ptr &val, char *buf, std::uint32_t len, HandlerT &&handler, AllocatorT &allocator)
 	{
 		if( !val )
 			return false;
@@ -166,8 +166,8 @@ namespace async { namespace network {
 		return val->async_read(service::buffer(buf, len), std::forward<HandlerT>(handler), allocator);
 	}
 
-	template < typename HandlerT, typename AllocatorT = std::allocator<char> >
-	bool async_write(const session_ptr &val, const char *buf, std::uint32_t len, HandlerT &&handler, const AllocatorT &allocator = AllocatorT())
+	template < typename HandlerT, typename AllocatorT >
+	bool async_write(const session_ptr &val, const char *buf, std::uint32_t len, HandlerT &&handler, AllocatorT &allocator)
 	{
 		if( !val )
 			return false;
@@ -177,7 +177,7 @@ namespace async { namespace network {
 
 
 	template < typename HandlerT, typename AllocatorT >
-	bool session::async_read(service::mutable_buffer_t &buffer, HandlerT &&read_handler, const AllocatorT &allocator)
+	bool session::async_read(service::mutable_buffer_t &buffer, HandlerT &&read_handler, AllocatorT &allocator)
 	{
 		return _run_impl([&]()
 		{
@@ -195,7 +195,7 @@ namespace async { namespace network {
 	}
 
 	template < typename HandlerT, typename AllocatorT >
-	bool session::async_read_some(service::mutable_buffer_t &buffer, std::uint32_t min_len, HandlerT && handler, const AllocatorT &allocator)
+	bool session::async_read_some(service::mutable_buffer_t &buffer, std::uint32_t min_len, HandlerT && handler, AllocatorT &allocator)
 	{
 		return _run_impl([&]()
 		{
@@ -211,7 +211,7 @@ namespace async { namespace network {
 	}
 
 	template < typename HandlerT, typename AllocatorT >
-	bool session::async_write(const service::const_buffer_t &buffer, HandlerT &&write_handler, const AllocatorT &allocator)
+	bool session::async_write(const service::const_buffer_t &buffer, HandlerT &&write_handler, AllocatorT &allocator)
 	{
 		return _run_impl([&]()
 		{
@@ -229,41 +229,13 @@ namespace async { namespace network {
 		}, false);
 	}
 
-	template < typename ParamT >
-	struct hook_handler_t
-		: ParamT
-	{
-		session_ptr session_;
-
-		hook_handler_t(session_ptr &&session, ParamT &&param)
-			: session_(std::move(session))
-			, ParamT(std::move(param))
-		{}
-
-		hook_handler_t(hook_handler_t &&rhs)
-			: session_(std::move(rhs.session_))
-			, ParamT(std::move(rhs))
-		{}
-
-		void operator()(const std::error_code &err, std::uint32_t len)
-		{
-			session_->_handle_write(err, len, *static_cast<ParamT *>(this));
-		}
-	};
-
 	template < typename HandlerT, typename AllocatorT, typename ...Args >
 	typename std::enable_if<!std::is_same<HandlerT, service::const_buffer_t>::value, bool>::type
-		session::async_write(HandlerT &&handler, const AllocatorT &allocator, Args &&...args)
+		session::async_write(HandlerT &&handler, AllocatorT &allocator, const Args &...args)
 	{
-		auto this_val = shared_from_this();
-		auto param = service::make_param(std::forward<HandlerT>(handler), std::forward<Args>(args)...);
-
-		typedef decltype(param) param_t;
-		hook_handler_t<param_t> hook_handler(std::move(this_val), std::move(param));
-		
 		return _run_impl([&]()
 		{
-			sck_->async_write(std::move(hook_handler), allocator);
+			sck_->async_write(handler, allocator, args...);
 		}, false);
 	}
 
@@ -355,7 +327,7 @@ namespace async { namespace network {
 	}
 
 	template < typename T, typename AlocatorT >
-	void session::additional_data(const T &t, const AlocatorT &allocator)
+	void session::additional_data(const T &t, AlocatorT &allocator)
 	{
 		data_ = std::allocate_shared<holder_impl_t<T>>(allocator, t);
 	}
@@ -430,16 +402,16 @@ namespace async { namespace network {
 		void register_disconnect_handler(const disconnect_handler_type &);
 
 	public:
-		template < typename HandlerT, typename AllocatorT = std::allocator<char> >
-		bool async_send(const service::const_buffer_t &, HandlerT &&, const AllocatorT &allocator = AllocatorT());
+		template < typename HandlerT, typename AllocatorT >
+		bool async_send(const service::const_buffer_t &, HandlerT &&, AllocatorT &allocator);
 		template < typename HandlerT, typename AllocatorT, typename ...Args >
 		typename std::enable_if<!std::is_same<HandlerT, service::const_buffer_t>::value, bool>::type
-			async_send(HandlerT &&, const AllocatorT &, Args &&...);
+			async_send(HandlerT &&, AllocatorT &, Args &&...);
 
-		template < typename HandlerT, typename AllocatorT = std::allocator<char> >
-		bool async_recv(char *, std::uint32_t, HandlerT &&, const AllocatorT &allocator = AllocatorT());
-		template < typename HandlerT, typename AllocatorT = std::allocator<char> >
-		bool async_read_some(service::mutable_buffer_t &, std::uint32_t min_len, HandlerT &&, const AllocatorT &allocator = AllocatorT());
+		template < typename HandlerT, typename AllocatorT>
+		bool async_recv(char *, std::uint32_t, HandlerT &&, AllocatorT &allocator);
+		template < typename HandlerT, typename AllocatorT>
+		bool async_read_some(service::mutable_buffer_t &, std::uint32_t min_len, HandlerT &&, AllocatorT &allocator);
 
 
 		bool send(const char *buf, std::uint32_t len);
@@ -502,7 +474,7 @@ namespace async { namespace network {
 	};
 
 	template < typename HandlerT, typename AllocatorT >
-	bool client::async_send(const service::const_buffer_t &buf, HandlerT &&handler, const AllocatorT &allocator)
+	bool client::async_send(const service::const_buffer_t &buf, HandlerT &&handler, AllocatorT &allocator)
 	{
 		return _run_impl([&]()
 		{
@@ -514,7 +486,7 @@ namespace async { namespace network {
 
 	template < typename HandlerT, typename AllocatorT, typename ...Args >
 	typename std::enable_if<!std::is_same<HandlerT, service::const_buffer_t>::value, bool>::type
-		client::async_send(HandlerT &&handler, const AllocatorT &allocator, Args &&...args)
+		client::async_send(HandlerT &&handler, AllocatorT &allocator, Args &&...args)
 	{
 		return _run_impl([&]()
 		{
@@ -526,7 +498,7 @@ namespace async { namespace network {
 	}
 
 	template < typename HandlerT, typename AllocatorT  >
-	bool client::async_recv(char *buf, std::uint32_t len, HandlerT &&handler, const AllocatorT &allocator)
+	bool client::async_recv(char *buf, std::uint32_t len, HandlerT &&handler, AllocatorT &allocator)
 	{
 		return _run_impl([&]()
 		{
@@ -536,7 +508,7 @@ namespace async { namespace network {
 	}
 
 	template < typename HandlerT, typename AllocatorT  >
-	bool client::async_read_some(service::mutable_buffer_t &buffer, std::uint32_t min_len, HandlerT && handler, const AllocatorT &allocator)
+	bool client::async_read_some(service::mutable_buffer_t &buffer, std::uint32_t min_len, HandlerT && handler, AllocatorT &allocator)
 	{
 		return _run_impl([&]()
 		{

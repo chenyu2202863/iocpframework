@@ -27,8 +27,8 @@ void read(const network::session_ptr &session)
 			[](const network::session_ptr &session, std::uint32_t len)
 		{
 			read(session);
-		});
-	});
+		}, buffer->write_allocator_);
+	}, buffer->read_allocator_);
 }
 
 void svr_start(char **argv)

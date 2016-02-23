@@ -41,8 +41,8 @@ namespace async { namespace service {
 			// 绑定设备到完成端口
 			void bind(void *);
 			// 向完成端口投递请求
-			template<typename HandlerT, typename AllocatorT = std::allocator<char> >
-			void post(HandlerT &&, const AllocatorT &allocator = AllocatorT());
+			template<typename HandlerT, typename AllocatorT>
+			void post(HandlerT &&, AllocatorT &allocator);
 			// 停止服务
 			void stop();
 
@@ -52,7 +52,7 @@ namespace async { namespace service {
 
 
 		template < typename HandlerT, typename AllocatorT >
-		void io_dispatcher_t::post(HandlerT &&handler, const AllocatorT &allocator)
+		void io_dispatcher_t::post(HandlerT &&handler, AllocatorT &allocator)
 		{
 			async_callback_base_ptr async(make_async_callback(std::forward<HandlerT>(handler), allocator));
 

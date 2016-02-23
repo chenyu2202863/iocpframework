@@ -91,10 +91,10 @@ namespace async { namespace service {
 			std::uint32_t transfers_;
 			const std::uint32_t total_;
 			HandlerT handler_;
-			AllocatorT allocator_;
+			AllocatorT &allocator_;
 
 		public:
-			write_handler_t(AsyncWriteStreamT &stream, const ConstBufferT &buffer, std::uint32_t total, const CompletionConditionT &condition, std::uint32_t transfer, HandlerT &&handler, const AllocatorT &allocator)
+			write_handler_t(AsyncWriteStreamT &stream, const ConstBufferT &buffer, std::uint32_t total, const CompletionConditionT &condition, std::uint32_t transfer, HandlerT &&handler, AllocatorT &allocator)
 				: stream_(stream)
 				, buffer_(buffer)
 				, condition_(condition)
@@ -217,20 +217,20 @@ namespace async { namespace service {
 
 	//
 	template<typename SyncWriteStreamT, typename ConstBufferT, typename HandlerT, typename AllocatorT>
-	void async_write(SyncWriteStreamT &s, const ConstBufferT &buffer, const HandlerT &handler, const AllocatorT &allocator)
+	void async_write(SyncWriteStreamT &s, const ConstBufferT &buffer, const HandlerT &handler, AllocatorT &allocator)
 	{
 		async_write(s, buffer, transfer_all(), handler, allocator);
 	}
 
 	template<typename SyncWriteStreamT, typename ConstBufferT, typename HandlerT, typename AllocatorT>
-	void async_write(SyncWriteStreamT &s, const ConstBufferT &buffer, const std::uint64_t &offset, const HandlerT &handler, const AllocatorT &allocator)
+	void async_write(SyncWriteStreamT &s, const ConstBufferT &buffer, const std::uint64_t &offset, const HandlerT &handler, AllocatorT &allocator)
 	{
 		async_write(s, buffer, offset, transfer_all(), handler, allocator);
 	}
 
 	// 
 	template<typename SyncWriteStreamT, typename ConstBufferT, typename ComplateConditionT, typename HandlerT, typename AllocatorT>
-	void async_write(SyncWriteStreamT &s, const ConstBufferT &buf, const ComplateConditionT &condition, HandlerT &&handler, const AllocatorT &allocator)
+	void async_write(SyncWriteStreamT &s, const ConstBufferT &buf, const ComplateConditionT &condition, HandlerT &&handler, AllocatorT &allocator)
 	{
 		typedef details::write_handler_t<SyncWriteStreamT, ConstBufferT, ComplateConditionT, HandlerT, AllocatorT> HookWriteHandler;
 

@@ -46,9 +46,8 @@ namespace async { namespace service {
 		virtual void invoke(const std::error_code &error, std::uint32_t size) = 0;
 		virtual void deallocate() = 0;
 
-	private:
-		async_callback_base_t(const async_callback_base_t &);
-		async_callback_base_t &operator=(const async_callback_base_t &);
+		async_callback_base_t(const async_callback_base_t &) = delete;
+		async_callback_base_t &operator=(const async_callback_base_t &) = delete;
 	};
 
 	template < typename OverlappedT >
@@ -66,9 +65,9 @@ namespace async { namespace service {
 	{
 		typedef win_async_callback_t<HandlerT, AllocatorT> this_t;
 		HandlerT handler_;
-		AllocatorT allocator_;
+		AllocatorT &allocator_;
 
-		explicit win_async_callback_t(HandlerT &&callback, const AllocatorT &allocator)
+		explicit win_async_callback_t(HandlerT &&callback, AllocatorT &allocator)
 			: handler_(std::move(callback))
 			, allocator_(allocator)
 		{}
@@ -83,11 +82,9 @@ namespace async { namespace service {
 
 		virtual void deallocate()
 		{
-			typedef typename AllocatorT::rebind<this_t>::other allocator_t;
-			allocator_t alloc = allocator_;
-
-			alloc.destroy(this);
-			alloc.deallocate(this, 1);
+			char *p = (char *)this;
+			this->~win_async_callback_t();
+			allocator_.deallocate(p, sizeof(this_t));
 		}
 	};
 
@@ -98,14 +95,12 @@ namespace async { namespace service {
 	}
 
 	template < typename HandlerT, typename AllocatorT >
-	win_async_callback_t<HandlerT, AllocatorT> *make_async_callback(HandlerT &&handler, const AllocatorT &allocator)
+	win_async_callback_t<HandlerT, AllocatorT> *make_async_callback(HandlerT &&handler, AllocatorT &allocator)
 	{
 		typedef win_async_callback_t<HandlerT, AllocatorT> async_callback_t;
 
-		typedef typename AllocatorT::rebind<async_callback_t>::other allocator_t;
-		allocator_t alloc = allocator;
-		auto p = alloc.allocate(1);
-		alloc.construct(p, std::forward<HandlerT>(handler), allocator);
+		auto p = (win_async_callback_t<HandlerT, AllocatorT> *)allocator.allocate(sizeof(async_callback_t));
+		new((void*)p) async_callback_t(std::forward<HandlerT>(handler), allocator);
 
 		return p;
 	}

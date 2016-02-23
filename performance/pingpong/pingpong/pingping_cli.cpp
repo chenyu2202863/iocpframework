@@ -113,14 +113,14 @@ public:
 	void read()
 	{
 		cli_.async_recv(read_buf_.data(), read_buf_.size(), 
-			make_custom_handler(read_allocator_, [this](std::uint32_t len)
+			[this](std::uint32_t len)
 		{
 			++read_msg_cnt_;
 			read_bytes_ += len;
 
 			std::swap(read_buf_, write_buf_);
 			write();
-		}));
+		}, read_allocator_);
 	}
 
 	void write()
@@ -130,7 +130,7 @@ public:
 		{
 			write_bytes_ += len;
 			read();
-		}, std::allocator<char>());
+		}, write_allocator_);
 	}
 
 };
@@ -181,10 +181,11 @@ void client_start(char **argv)
 
 	timer.async_wait();
 
+	std::allocator<char> allocator;
 	std::for_each(sessions.begin(), sessions.end(), 
-		[ip, port, &io](session_t *session)
+		[ip, port, &io, &allocator](session_t *session)
 	{
-		io.post(std::bind(&session_t::start, session, ip, port));
+		io.post(std::bind(&session_t::start, session, ip, port), allocator);
 	});
 
 	std::cin.get();

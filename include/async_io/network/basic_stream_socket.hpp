@@ -134,12 +134,12 @@ namespace async { namespace network {
 
 		// 异步发送数据
 		template < typename ConstBufferT, typename HandlerT, typename AllocatorT >
-		void async_write(const ConstBufferT &buffer, HandlerT &&callback, const AllocatorT &allocator)
+		void async_write(const ConstBufferT &buffer, HandlerT &&callback, AllocatorT &allocator)
 		{
 			return impl_.async_write(buffer, std::forward<HandlerT>(callback), allocator);
 		}
 		template < typename ParamT, typename AllocatorT >
-		void async_write(ParamT &&callback, const AllocatorT &allocator)
+		void async_write(ParamT &&callback, AllocatorT &allocator)
 		{
 			return impl_.async_write(std::forward<ParamT>(callback), allocator);
 		}
@@ -159,7 +159,7 @@ namespace async { namespace network {
 
 		// 异步接收数据
 		template < typename MutableBufferT, typename HandlerT, typename AllocatorT >
-		void async_read(MutableBufferT &buffer, HandlerT &&callback, const AllocatorT &allocator)
+		void async_read(MutableBufferT &buffer, HandlerT &&callback, AllocatorT &allocator)
 		{
 			return impl_.async_read(buffer, std::forward<HandlerT>(callback), allocator);
 		}

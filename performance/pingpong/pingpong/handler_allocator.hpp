@@ -32,7 +32,7 @@ public:
 		}
 	}
 
-	void deallocate(void* pointer)
+	void deallocate(void* pointer, std::size_t)
 	{
 		if (pointer == &storage_)
 		{

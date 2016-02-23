@@ -194,12 +194,9 @@ namespace async { namespace network {
 
 		try
 		{
-			typedef decltype(this_val->svr_.impl_->session_allocator_pool_) pool_t;
-			typedef stdex::allocator::pool_allocator_t<char, pool_t> pool_allocator_t;
-
 			sck_->async_disconnect(true, [this_val](const std::error_code &e, std::uint32_t sz) mutable
 			{
-			}, pool_allocator_t(this_val->svr_.impl_->session_allocator_pool_));
+			}, this_val->svr_.impl_->session_allocator_pool_);
 		}
 		catch( std::exception &e )
 		{

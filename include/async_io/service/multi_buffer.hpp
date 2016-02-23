@@ -68,136 +68,29 @@ namespace async { namespace service {
 
 	}
 	
-	template < typename T >
-	struct arg_t
+
+	template < std::size_t Idx, typename T, std::size_t N, typename U >
+	void unpack(std::array<T, N> &buffers, const U &val)
 	{
-		T val_;
-		static const std::uint32_t arg_size = 1;
+		auto buffer_val = buffer(val);
+		buffers[Idx].buf = const_cast<char *>(buffer_val.data());
+		buffers[Idx].len = buffer_val.size();
+	}
 
-		arg_t(T &&val)
-			: val_(std::move(val))
-		{}
-		arg_t(arg_t &&rhs)
-			: val_(std::move(rhs.val_))
-		{}
-
-		arg_t(const arg_t &) = delete;
-		arg_t &operator=(const arg_t &) = delete;
-
-		template < std::uint32_t N, typename BuffersT >
-		void cast(BuffersT &buffers) const
-		{
-			auto buffer_val = buffer(val_);
-			buffers[N].buf = const_cast<char *>(buffer_val.data());
-			buffers[N].len = buffer_val.size();
-		}
-	};
-
-	template < typename T, typename AllocatorT >
-	struct arg_t<std::vector<T, AllocatorT>>
+	template < std::size_t Idx, typename T, std::size_t N, typename U, typename ...Args >
+	void unpack(std::array<T, N> &buffers, const U &val, const Args &...args)
 	{
-		using type = std::vector<T, AllocatorT>;
-		static const std::uint32_t arg_size = 2;
+		auto buffer_val = buffer(val);
+		buffers[Idx].buf = const_cast<char *>(buffer_val.data());
+		buffers[Idx].len = buffer_val.size();
 
-		std::uint32_t size_;
-		type val_;
+		unpack<Idx + 1>(buffers, args...);
+	}
 
-		arg_t(type &&val)
-			: size_(val.size())
-			, val_(std::move(val))
-		{}
-		arg_t(arg_t &&rhs)
-			: size_(rhs.size_)
-			, val_(std::move(rhs.val_))
-		{}
-
-		arg_t(const arg_t &) = delete;
-		arg_t &operator=(const arg_t &) = delete;
-
-		template < std::uint32_t N, typename BuffersT >
-		void cast(BuffersT &buffers) const
-		{
-			auto size_val = buffer(size_);
-			buffers[N - 1].buf = const_cast<char *>(size_val.data());
-			buffers[N - 1].len = size_val.size();
-
-			auto buffer_val = buffer(val_);
-			buffers[N].buf = const_cast<char *>(buffer_val.data());
-			buffers[N].len = buffer_val.size();
-		}
-	};
-
-	template < typename T, typename AllocatorT >
-	struct arg_t<std::basic_string<T, std::char_traits<T>, AllocatorT>>
+	template < typename T, std::size_t N, typename ...Args >
+	void unpack(std::array<T, N> &buffers, const Args &...args)
 	{
-		using type = std::basic_string<T, std::char_traits<T>, AllocatorT>;
-		static const std::uint32_t arg_size = 2;
-
-		std::uint32_t size_;
-		type val_;
-
-		arg_t(type &&val)
-			: size_(val.size())
-			, val_(std::move(val))
-		{}
-		arg_t(arg_t &&rhs)
-			: size_(rhs.size_)
-			, val_(std::move(rhs.val_))
-		{}
-
-		arg_t(const arg_t &) = delete;
-		arg_t &operator=(const arg_t &) = delete;
-
-		template < std::uint32_t N, typename BuffersT >
-		void cast(BuffersT &buffers) const
-		{
-			auto size_val = buffer(size_);
-			buffers[N - 1].buf = const_cast<char *>(size_val.data());
-			buffers[N - 1].len = size_val.size();
-
-			auto buffer_val = buffer(val_);
-			buffers[N].buf = const_cast<char *>(buffer_val.data());
-			buffers[N].len = buffer_val.size();
-		}
-	};
-
-
-	template < typename HandlerT, typename ...Args >
-	struct param_t
-		: HandlerT 
-	{
-		using tuple_t = std::tuple<arg_t<typename std::remove_reference<Args>::type>...>;
-		tuple_t params_;
-
-		using buffers_t = std::array<WSABUF, details::args_count_t<tuple_t>::value>;
-		buffers_t buffers_;
-
-		param_t(HandlerT &&handler, Args &&...args)
-			: HandlerT(std::forward<HandlerT>(handler))
-			, params_(std::make_tuple(std::forward<Args>(args)...))
-		{}
-
-		param_t(param_t &&param)
-			: HandlerT(std::move(param))
-			, params_(std::move(param.params_))
-		{}
-
-		param_t(const param_t &) = delete;
-		param_t &operator=(const param_t &) = delete;
-
-
-		const buffers_t &buffers()
-		{
-			details::tuple_for_each_t<buffers_t::_EEN_SIZE - 1, std::tuple_size<tuple_t>::value - 1>::run(buffers_, params_);
-			return buffers_;
-		}
-	};
-
-
-	template < typename HandlerT, typename ...Args >
-	param_t<HandlerT, Args...> make_param(HandlerT &&handler, Args &&...args)
-	{
-		return param_t<HandlerT, Args...>(std::forward<HandlerT>(handler), std::forward<Args>(args)...);
+		unpack<0>(buffers, args...);
 	}
 }}
 

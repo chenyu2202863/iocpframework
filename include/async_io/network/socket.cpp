@@ -24,24 +24,6 @@ namespace async { namespace network {
 		open(family, type, protocol);
 	}
 
-	socket_handle_t::socket_handle_t(socket_handle_t &&rhs)
-		: socket_(rhs.socket_)
-		, io_(rhs.io_)
-	{
-		rhs.socket_ = INVALID_SOCKET;
-	}
-
-	socket_handle_t &socket_handle_t::operator=(socket_handle_t &&rhs)
-	{
-		if( &rhs != this )
-		{
-			socket_ = rhs.socket_;
-			rhs.socket_ = INVALID_SOCKET;
-		}
-
-		return *this;
-	}
-
 	socket_handle_t::socket_handle_t(const socket_handle_t &rhs)
 		: socket_(rhs.socket_)
 		, io_(rhs.io_)
