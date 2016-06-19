@@ -116,7 +116,7 @@ namespace async { namespace network {
 
 	public:
 		session(server &svr, std::shared_ptr<socket_handle_t> &&sck, 
-			const error_handler_type &error_handler, const disconnect_handler_type &disconnect_handler);
+			const error_handler_type &, const disconnect_handler_type &);
 		~session();
 
 	private:
@@ -167,7 +167,12 @@ namespace async { namespace network {
 	}
 
 	template < typename HandlerT, typename AllocatorT >
-	bool async_write(const session_ptr &val, const char *buf, std::uint32_t len, HandlerT &&handler, AllocatorT &allocator)
+	bool async_write(
+		const session_ptr &val, 
+		const char *buf, 
+		std::uint32_t len, 
+		HandlerT &&handler, 
+		AllocatorT &allocator)
 	{
 		if( !val )
 			return false;
@@ -272,7 +277,8 @@ namespace async { namespace network {
 	}
 
 	template < typename HandlerT >
-	void session::_handle_read(const std::error_code &error, std::uint32_t size, const HandlerT &read_handler)
+	void session::_handle_read(const std::error_code &error, std::uint32_t size, 
+		const HandlerT &read_handler)
 	{
 		try
 		{
